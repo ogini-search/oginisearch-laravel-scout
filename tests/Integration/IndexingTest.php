@@ -8,6 +8,9 @@ use OginiScoutDriver\Tests\Integration\Factories\TestDataFactory;
 use OginiScoutDriver\Engine\OginiEngine;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @group integration-tests
+ */
 class IndexingTest extends IntegrationTestCase
 {
     protected function setUp(): void

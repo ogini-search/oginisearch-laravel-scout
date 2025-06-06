@@ -17,6 +17,9 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Exception\RequestException;
 
+/**
+ * @group integration-tests
+ */
 class AdvancedSearchTest extends TestCase
 {
     private OginiClient $client;

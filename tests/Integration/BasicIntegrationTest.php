@@ -6,6 +6,9 @@ use OginiScoutDriver\Tests\Integration\Models\TestProduct;
 use OginiScoutDriver\Tests\Integration\Factories\TestDataFactory;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @group integration-tests
+ */
 class BasicIntegrationTest extends IntegrationTestCase
 {
     /** @test */

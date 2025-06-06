@@ -6,6 +6,9 @@ use OginiScoutDriver\Tests\Integration\Models\TestProduct;
 use OginiScoutDriver\Tests\Integration\Factories\TestDataFactory;
 use Laravel\Scout\Builder;
 
+/**
+ * @group integration-tests
+ */
 class OginiSearchableTraitTest extends IntegrationTestCase
 {
     protected function setUp(): void

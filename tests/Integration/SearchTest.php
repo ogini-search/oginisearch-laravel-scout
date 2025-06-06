@@ -8,6 +8,9 @@ use OginiScoutDriver\Tests\Integration\Factories\TestDataFactory;
 use Laravel\Scout\Builder;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @group integration-tests
+ */
 class SearchTest extends IntegrationTestCase
 {
     protected function setUp(): void

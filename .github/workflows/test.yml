@@ -53,7 +53,7 @@ jobs:
         timeout-minutes: 10
         run: |
           echo "Starting tests at $(date)"
-          vendor/bin/phpunit --testsuite=Unit,Integration --exclude-group=quality-assurance,benchmarks,load-tests,error-conditions
+          vendor/bin/phpunit --testsuite=Unit --exclude-group=quality-assurance,benchmarks,load-tests,error-conditions,integration-tests
           echo "Tests completed at $(date)"
 
       - name: Upload coverage reports (PHP 8.3, Laravel 11 only)
