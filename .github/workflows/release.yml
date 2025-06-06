@@ -7,13 +7,20 @@ on:
 
 jobs:
   test:
-    name: Test
+    name: Comprehensive Tests
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         php: [8.2, 8.3]
         laravel: [10.*, 11.*]
+        dependency-version: [prefer-stable]
+        include:
+          - laravel: 10.*
+            testbench: 8.*
+          - laravel: 11.*
+            testbench: 9.*
 
     steps:
       - name: Checkout code
@@ -26,13 +33,40 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
           coverage: xdebug
 
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-release-php-${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
+
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-          composer update --prefer-stable --prefer-dist --no-interaction
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction --no-progress
 
-      - name: Run tests
-        run: vendor/bin/phpunit
+      - name: Run comprehensive tests
+        run: vendor/bin/phpunit --verbose --coverage-text
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, sqlite3, pdo_sqlite, bcmath, intl
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Run static analysis
+        run: composer analyse
 
   security:
     name: Security Audit
@@ -53,10 +87,35 @@ jobs:
       - name: Security audit
         run: composer audit
 
-  release:
-    name: Create Release
+  validate:
+    name: Package Validation
     runs-on: ubuntu-latest
-    needs: [test, security]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Check if tag matches version in composer.json
+        run: |
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          COMPOSER_VERSION=$(php -r "echo json_decode(file_get_contents('composer.json'))->version;")
+          if [ "$TAG_VERSION" != "$COMPOSER_VERSION" ]; then
+            echo "Tag version ($TAG_VERSION) does not match composer.json version ($COMPOSER_VERSION)"
+            exit 1
+          fi
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [test, code-quality, security, validate]
 
     steps:
       - name: Checkout code
@@ -73,13 +132,32 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Check if CHANGELOG exists
+        id: changelog_exists
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Extract changelog
         id: changelog
+        if: steps.changelog_exists.outputs.exists == 'true'
         run: |
-          awk "/^## \[${{ steps.version.outputs.VERSION }}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > release_notes.md
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
-          cat release_notes.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          if awk "/^## \[${{ steps.version.outputs.VERSION }}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > release_notes.md && [ -s release_notes.md ]; then
+            echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+            cat release_notes.md >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "RELEASE_NOTES=Release version ${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate release notes fallback
+        id: fallback_notes
+        if: steps.changelog_exists.outputs.exists == 'false'
+        run: |
+          echo "RELEASE_NOTES=Release version ${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
@@ -88,6 +166,18 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ steps.version.outputs.VERSION }}
-          body: ${{ steps.changelog.outputs.RELEASE_NOTES }}
+          body: ${{ steps.changelog.outputs.RELEASE_NOTES || steps.fallback_notes.outputs.RELEASE_NOTES }}
           draft: false
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
+
+  packagist:
+    name: Update Packagist
+    runs-on: ubuntu-latest
+    needs: [release]
+    if: ${{ !contains(github.ref, 'beta') && !contains(github.ref, 'alpha') && !contains(github.ref, 'rc') }}
+
+    steps:
+      - name: Update Packagist
+        run: |
+          curl -XPOST -H'Content-type:application/json' 'https://packagist.org/api/update-package?token=${{ secrets.PACKAGIST_TOKEN }}' -d'{"repository":{"url":"${{ github.repositoryUrl }}"}}'
+        continue-on-error: true
