@@ -303,7 +303,7 @@ class ConnectionPool
      * @param int $concurrency
      * @return array
      */
-    public function sendConcurrentRequests(array $requests, int $concurrency = null): array
+    public function sendConcurrentRequests(array $requests, ?int $concurrency = null): array
     {
         $concurrency = $concurrency ?? $this->config['max_concurrent_requests'];
         $responses = [];

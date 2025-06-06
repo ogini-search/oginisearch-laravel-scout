@@ -53,7 +53,7 @@
   "scripts": {
     "test": "phpunit",
     "test-coverage": "phpunit --coverage-html coverage",
-    "analyse": "phpstan analyse --memory-limit=256M",
+    "analyse": "phpstan analyse --memory-limit=256M --no-progress",
     "release": "./scripts/release.sh",
     "release:patch": "./scripts/release.sh patch",
     "release:minor": "./scripts/release.sh minor",

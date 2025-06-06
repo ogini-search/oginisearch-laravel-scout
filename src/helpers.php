@@ -115,7 +115,7 @@ if (!function_exists('ogini_config')) {
      * @param mixed $default
      * @return mixed
      */
-    function ogini_config(string $key = null, $default = null)
+    function ogini_config(?string $key = null, $default = null)
     {
         return ConfigHelpers::getConfig($key, $default);
     }

@@ -92,7 +92,12 @@ jobs:
         timeout-minutes: 5
         run: |
           echo "Starting PHPStan analysis at $(date)"
-          composer analyse
+          echo "PHP Version: $(php -v | head -n 1)"
+          echo "PHPStan Version: $(vendor/bin/phpstan --version)"
+          echo "PHPStan Config: $(cat phpstan.neon)"
+          echo "===================="
+          composer analyse -v
+          echo "===================="
           echo "PHPStan completed at $(date)"
 
       - name: Check coding standards
