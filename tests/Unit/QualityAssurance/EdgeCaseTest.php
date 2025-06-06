@@ -14,6 +14,9 @@ use Laravel\Scout\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Mockery;
 
+/**
+ * @group quality-assurance
+ */
 class EdgeCaseTest extends TestCase
 {
     protected function tearDown(): void

@@ -9,6 +9,9 @@ use OginiScoutDriver\Exceptions\ValidationException;
 use OginiScoutDriver\Exceptions\OginiException;
 use Mockery;
 
+/**
+ * @group quality-assurance
+ */
 class SecurityTest extends TestCase
 {
     protected function tearDown(): void

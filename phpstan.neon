@@ -22,7 +22,7 @@ parameters:
         - '#Comparison operation .* is always true#'
         - '#Else branch is unreachable#'
         - '#Anonymous function has an unused use#'
-        - '#Deprecated in PHP 8.4#'
+        - '#Deprecated in PHP 8\.4: Parameter .* is implicitly nullable via default value null#'
         - '#Parameter .* expects .*, .* given#'
         - '#Method .* should return .* but returns#'
         - '#Comparison operation .* results in an error#'

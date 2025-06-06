@@ -13,6 +13,9 @@ use Laravel\Scout\ScoutServiceProvider;
 use Laravel\Scout\EngineManager;
 use Mockery;
 
+/**
+ * @group quality-assurance
+ */
 class LaravelCompatibilityTest extends TestCase
 {
     protected function tearDown(): void
