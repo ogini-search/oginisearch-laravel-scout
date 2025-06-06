@@ -42,11 +42,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
+          composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update
           composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction --no-progress
 
       - name: Run comprehensive tests
-        run: vendor/bin/phpunit --verbose --coverage-text
+        run: vendor/bin/phpunit --coverage-text
 
   code-quality:
     name: Code Quality Check
