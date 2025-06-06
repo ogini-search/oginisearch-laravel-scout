@@ -96,13 +96,15 @@ class ConnectionPool
             'timeout' => $this->config['request_timeout'],
             'connect_timeout' => $this->config['connection_timeout'],
             'http_errors' => false,
-            'curl' => [
+            'curl' => array_filter([
                 CURLOPT_TCP_KEEPALIVE => $this->config['enable_keep_alive'] ? 1 : 0,
                 CURLOPT_TCP_KEEPIDLE => $this->config['keep_alive_timeout'],
                 CURLOPT_TCP_KEEPINTVL => 30,
-                CURLOPT_TCP_KEEPCNT => 3,
+                defined('CURLOPT_TCP_KEEPCNT') ? CURLOPT_TCP_KEEPCNT : null => defined('CURLOPT_TCP_KEEPCNT') ? 3 : null,
                 CURLOPT_MAXCONNECTS => $this->config['max_connections_per_pool'],
-            ],
+            ], function ($value, $key) {
+                return $key !== null && $value !== null;
+            }, ARRAY_FILTER_USE_BOTH),
             'version' => $this->config['enable_http2'] ? '2.0' : '1.1',
         ]);
     }

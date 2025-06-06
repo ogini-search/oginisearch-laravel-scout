@@ -35,7 +35,10 @@ class LoadTestingTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group load-tests
+     */
     public function it_handles_concurrent_search_requests(): void
     {
         $concurrentLevels = [10, 25, 50, 100];
@@ -90,7 +93,10 @@ class LoadTestingTest extends TestCase
         $this->assertLessThan(80, $degradationPercent, "Performance should not degrade by more than 80% under high load");
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group load-tests
+     */
     public function it_handles_concurrent_indexing_requests(): void
     {
         $concurrentDocuments = [10, 25, 50, 100];
@@ -139,7 +145,10 @@ class LoadTestingTest extends TestCase
         $this->loadTestResults['concurrent_indexing'] = $results;
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group load-tests
+     */
     public function it_handles_batch_processing_stress_test(): void
     {
         $batchSizes = [100, 500, 1000, 2000];
@@ -211,7 +220,10 @@ class LoadTestingTest extends TestCase
         $this->loadTestResults['batch_processing_stress'] = $results;
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group load-tests
+     */
     public function it_handles_mixed_workload_stress_test(): void
     {
         $workloadMix = [
@@ -299,7 +311,10 @@ class LoadTestingTest extends TestCase
         $this->assertEquals(100, $results['success_rate'], "Should have 100% success rate");
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group load-tests
+     */
     public function it_handles_sustained_load_test(): void
     {
         $duration = 2; // seconds (reduced for faster testing)
@@ -370,7 +385,10 @@ class LoadTestingTest extends TestCase
         $this->assertEquals(0, $errors, "Should have no errors during sustained load");
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group load-tests
+     */
     public function it_handles_spike_load_test(): void
     {
         $normalLoad = 10;
