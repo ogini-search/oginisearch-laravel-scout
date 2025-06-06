@@ -13,3 +13,6 @@
 #prd files
 /ogini-scout-driver-todo-list.md
 /ogini-scout-driver-prd.md
+
+/build/
+*.cache

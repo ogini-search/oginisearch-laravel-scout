@@ -32,12 +32,12 @@
   "require": {
     "php": "^8.2",
     "guzzlehttp/guzzle": "^7.0",
-    "laravel/framework": "11.*",
+    "laravel/framework": "^10.0|^11.0",
     "laravel/scout": "^10.0"
   },
   "require-dev": {
     "nunomaduro/larastan": "^2.0",
-    "orchestra/testbench": "9.*",
+    "orchestra/testbench": "^8.0|^9.0",
     "phpunit/phpunit": "^10.0"
   },
   "autoload": {
@@ -53,7 +53,7 @@
   "scripts": {
     "test": "phpunit",
     "test-coverage": "phpunit --coverage-html coverage",
-    "analyse": "phpstan analyse",
+    "analyse": "phpstan analyse --memory-limit=256M",
     "release": "./scripts/release.sh",
     "release:patch": "./scripts/release.sh patch",
     "release:minor": "./scripts/release.sh minor",

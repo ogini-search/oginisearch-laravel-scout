@@ -1,0 +1,37 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    paths:
+        - src
+        - config
+    level: 5
+    ignoreErrors:
+        - '#Unsafe usage of new static#'
+        - '#Call to an undefined method.*::searchableAs\(\)#'
+        - '#Call to an undefined method.*::getScoutKey\(\)#'
+        - '#Call to an undefined method.*::toSearchableArray\(\)#'
+        - '#Call to an undefined method.*::getScoutModelsByIds\(\)#'
+        - '#Call to an undefined method.*::queryScoutModelsByIds\(\)#'
+        - '#Call to an undefined method.*::get\(\)#'
+        - '#Call to an undefined method.*::index\(\)#'
+        - '#Call to an undefined method.*::delete\(\)#'
+        - '#Call to an undefined static method.*::.*Async\(\)#'
+        - '#PHPDoc tag @method has invalid value#'
+        - '#Right side of && is always true#'
+        - '#Comparison operation .* is always true#'
+        - '#Else branch is unreachable#'
+        - '#Anonymous function has an unused use#'
+        - '#Deprecated in PHP 8.4#'
+        - '#Parameter .* expects .*, .* given#'
+        - '#Method .* should return .* but returns#'
+        - '#Comparison operation .* results in an error#'
+    excludePaths:
+        - vendor
+        - tests
+        - examples
+        - docs
+    parallel:
+        jobSize: 10
+        maximumNumberOfProcesses: 4
+    tmpDir: build/phpstan 

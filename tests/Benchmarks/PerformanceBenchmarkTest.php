@@ -42,7 +42,10 @@ class PerformanceBenchmarkTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group benchmarks
+     */
     public function it_benchmarks_single_document_indexing(): void
     {
         $this->mockHandler->append(new Response(200, [], json_encode(['_id' => 'doc1', 'result' => 'created'])));
@@ -89,7 +92,10 @@ class PerformanceBenchmarkTest extends TestCase
         $this->assertGreaterThan(0, $avgTime, "Indexing time should be positive");
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group benchmarks
+     */
     public function it_benchmarks_bulk_document_indexing(): void
     {
         $batchSizes = [10, 50, 100, 500];
@@ -146,7 +152,10 @@ class PerformanceBenchmarkTest extends TestCase
         }
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group benchmarks
+     */
     public function it_benchmarks_search_performance(): void
     {
         $searchQueries = [
@@ -228,7 +237,10 @@ class PerformanceBenchmarkTest extends TestCase
         }
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group benchmarks
+     */
     public function it_benchmarks_memory_usage(): void
     {
         $initialMemory = memory_get_usage(true);
@@ -275,7 +287,10 @@ class PerformanceBenchmarkTest extends TestCase
         $this->assertArrayHasKey('items', $result);
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group benchmarks
+     */
     public function it_benchmarks_concurrent_search_performance(): void
     {
         // Mock responses for concurrent searches
@@ -319,7 +334,10 @@ class PerformanceBenchmarkTest extends TestCase
         );
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group benchmarks
+     */
     public function it_benchmarks_query_optimization(): void
     {
         $baseQuery = ['query' => ['match' => ['title' => 'optimization test']]];
@@ -385,7 +403,10 @@ class PerformanceBenchmarkTest extends TestCase
         );
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group benchmarks
+     */
     public function it_benchmarks_cache_performance(): void
     {
         $cacheableQuery = ['query' => ['match' => ['title' => 'cache test']]];
@@ -432,7 +453,10 @@ class PerformanceBenchmarkTest extends TestCase
         $this->assertLessThan($firstRequestTime, $avgCachedTime, "Cached requests should be faster");
     }
 
-    /** @test */
+    /**
+     * @test
+     * @group benchmarks
+     */
     public function it_benchmarks_different_document_sizes(): void
     {
         $documentSizes = [

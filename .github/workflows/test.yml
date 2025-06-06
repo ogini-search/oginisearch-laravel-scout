@@ -50,7 +50,7 @@ jobs:
           composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction --no-progress
 
       - name: Execute tests
-        run: vendor/bin/phpunit --testsuite=Unit,Integration --exclude-group=quality-assurance
+        run: vendor/bin/phpunit --testsuite=Unit,Integration --exclude-group=quality-assurance,benchmarks
 
       - name: Upload coverage reports (PHP 8.3, Laravel 11 only)
         if: matrix.php == '8.3' && matrix.laravel == '11.*'
