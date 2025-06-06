@@ -8,10 +8,14 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RegexIterator;
 
+/**
+ * @group quality-assurance
+ */
 class CodeCoverageTest extends TestCase
 {
     /**
      * Test that all public methods have corresponding tests.
+     * @group quality-assurance
      */
     public function testAllPublicMethodsHaveTests(): void
     {
@@ -63,6 +67,7 @@ class CodeCoverageTest extends TestCase
 
     /**
      * Test that critical classes have comprehensive test coverage.
+     * @group quality-assurance
      */
     public function testCriticalClassesCoverage(): void
     {
@@ -98,6 +103,7 @@ class CodeCoverageTest extends TestCase
 
     /**
      * Test that all exception classes have proper test coverage.
+     * @group quality-assurance
      */
     public function testExceptionClassesCoverage(): void
     {

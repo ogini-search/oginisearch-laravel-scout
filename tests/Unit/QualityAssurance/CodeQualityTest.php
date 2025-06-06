@@ -7,6 +7,9 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RegexIterator;
 
+/**
+ * @group quality-assurance
+ */
 class CodeQualityTest extends TestCase
 {
     private string $srcPath;

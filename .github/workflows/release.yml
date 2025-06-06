@@ -47,7 +47,7 @@ jobs:
           composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction --no-progress
 
       - name: Run comprehensive tests
-        run: vendor/bin/phpunit --coverage-text
+        run: vendor/bin/phpunit --testsuite=Unit,Integration,Benchmarks --coverage-text
 
   code-quality:
     name: Code Quality Check
