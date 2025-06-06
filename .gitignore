@@ -1,0 +1,15 @@
+/vendor
+/composer.lock
+/.phpunit.result.cache
+/.phpunit.cache
+/.php-cs-fixer.cache
+/coverage
+/.idea
+/.vscode
+/.DS_Store
+/node_modules
+/.env 
+
+#prd files
+/ogini-scout-driver-todo-list.md
+/ogini-scout-driver-prd.md
