@@ -10,11 +10,16 @@ use OginiScoutDriver\Engine\OginiEngine;
 use OginiScoutDriver\Listeners\LogIndexingActivity;
 use OginiScoutDriver\Listeners\LogSearchActivity;
 use OginiScoutDriver\Services\UpdateChecker;
+use OginiScoutDriver\Services\UpdateNotificationService;
 use OginiScoutDriver\Console\CheckUpdatesCommand;
 use Illuminate\Support\Facades\Event;
 
 class OginiServiceProvider extends ServiceProvider
 {
+    /**
+     * Package version.
+     */
+    const VERSION = '1.0.0';
     /**
      * Register any application services.
      *
@@ -48,6 +53,7 @@ class OginiServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(UpdateChecker::class);
+        $this->app->singleton(UpdateNotificationService::class);
     }
 
     /**

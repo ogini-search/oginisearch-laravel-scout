@@ -1,226 +1,470 @@
 # Distribution Guide
 
-This document outlines the distribution process for the Ogini Laravel Scout Driver package.
+This document outlines the complete distribution and release process for the Ogini Laravel Scout Driver package.
 
-## Package Distribution Channels
+## Table of Contents
 
-### 1. Packagist (Primary)
+- [Release Process](#release-process)
+- [Version Management](#version-management)
+- [Distribution Channels](#distribution-channels)
+- [Packagist Submission](#packagist-submission)
+- [GitHub Releases](#github-releases)
+- [Update Management](#update-management)
+- [Security Updates](#security-updates)
+- [Documentation Maintenance](#documentation-maintenance)
+- [Quality Assurance](#quality-assurance)
 
-Packagist is the main Composer repository for PHP packages.
+## Release Process
 
-#### Registration Steps
+### Prerequisites
 
-1. **Create Packagist Account**
+Before creating a release, ensure:
+
+1. ✅ All tests pass (430/430 tests)
+2. ✅ Code coverage meets thresholds (90%+)
+3. ✅ Documentation is up to date
+4. ✅ CHANGELOG.md is current
+5. ✅ No security vulnerabilities
+6. ✅ Compatibility tested with Laravel 8.x-11.x
+
+### Automated Release
+
+The package includes a comprehensive release automation script:
+
+```bash
+# Patch release (1.0.0 -> 1.0.1)
+composer run release:patch
+
+# Minor release (1.0.0 -> 1.1.0)
+composer run release:minor
+
+# Major release (1.0.0 -> 2.0.0)
+composer run release:major
+
+# Prerelease (1.0.0 -> 1.0.0-beta.1)
+composer run release:prerelease
+```
+
+### Manual Release Steps
+
+If you need to perform a manual release:
+
+1. **Update Version Numbers:**
+   ```bash
+   # Update version in composer.json
+   composer config version "1.1.0"
+   
+   # Update version constant in OginiServiceProvider
+   sed -i 's/const VERSION = .*/const VERSION = "1.1.0";/' src/OginiServiceProvider.php
+   ```
+
+2. **Update Documentation:**
+   ```bash
+   # Update README badges
+   sed -i 's/v[0-9]\+\.[0-9]\+\.[0-9]\+/v1.1.0/g' README.md
+   ```
+
+3. **Generate Changelog:**
+   ```bash
+   # Add new entry to CHANGELOG.md
+   echo "## [1.1.0] - $(date +%Y-%m-%d)" >> CHANGELOG.md
+   git log --oneline --no-merges v1.0.0..HEAD >> CHANGELOG.md
+   ```
+
+4. **Create Release:**
+   ```bash
+   git add .
+   git commit -m "chore: release version 1.1.0"
+   git tag -a v1.1.0 -m "Release version 1.1.0"
+   git push origin main --tags
+   ```
+
+## Version Management
+
+### Semantic Versioning
+
+This package follows [Semantic Versioning (SemVer)](https://semver.org/):
+
+- **MAJOR** version for incompatible API changes
+- **MINOR** version for backward-compatible functionality additions
+- **PATCH** version for backward-compatible bug fixes
+
+### Version Tracking
+
+Version information is maintained in multiple locations:
+
+1. **composer.json** - Primary version field
+2. **OginiServiceProvider::VERSION** - PHP constant for runtime access
+3. **README.md** - Documentation badges
+4. **CHANGELOG.md** - Release history
+
+### Pre-release Versioning
+
+For beta releases:
+- Format: `1.0.0-beta.1`, `1.0.0-beta.2`, etc.
+- Used for testing new features before stable release
+- Not recommended for production use
+
+## Distribution Channels
+
+### Primary Channels
+
+1. **Packagist (Primary)**
+   - Official PHP package repository
+   - Automatic installation via Composer
+   - URL: https://packagist.org/packages/ogini-search/laravel-scout-driver
+
+2. **GitHub Releases**
+   - Source code distribution
+   - Release notes and changelogs
+   - URL: https://github.com/ogini-search/laravel-scout-driver/releases
+
+### Installation Methods
+
+#### Composer (Recommended)
+
+```bash
+composer require ogini-search/laravel-scout-driver
+```
+
+#### Development Installation
+
+```bash
+composer require ogini-search/laravel-scout-driver:dev-main
+```
+
+#### Specific Version
+
+```bash
+composer require ogini-search/laravel-scout-driver:^1.0
+```
+
+## Packagist Submission
+
+### Initial Submission
+
+1. **Create Packagist Account:**
    - Visit https://packagist.org/
-   - Register with GitHub account (recommended)
+   - Sign up with GitHub account
+   - Verify email address
 
-2. **Submit Package**
+2. **Submit Package:**
    - Go to https://packagist.org/packages/submit
-   - Enter GitHub repository URL: `https://github.com/[username]/laravel-scout-driver`
-   - Click "Check" to validate
-   - Submit the package
+   - Enter repository URL: `https://github.com/ogini-search/laravel-scout-driver`
+   - Click "Check" and then "Submit"
 
-3. **Configure Auto-Update**
-   - Navigate to package settings on Packagist
-   - Enable "GitHub Service Hook" 
-   - Or use manual webhook: `https://packagist.org/api/github?username=[username]`
-
-#### Package Information
-
-- **Package Name**: `ogini-search/laravel-scout-driver`
-- **Description**: Laravel Scout driver for OginiSearch
-- **Type**: `library`
-- **License**: MIT
-- **Homepage**: [Package website or GitHub repository]
-
-### 2. GitHub Releases
-
-Automated through GitHub Actions when tags are pushed.
-
-#### Release Process
-
-1. **Automatic Releases**
+3. **Auto-Update Hook:**
    ```bash
-   # Tag and push to trigger release
-   git tag v1.0.0
-   git push origin v1.0.0
+   # Add GitHub webhook for automatic updates
+   # URL: https://packagist.org/api/github?username=ogini-search
+   # Events: Just the push event
    ```
 
-2. **Manual Release Script**
-   ```bash
-   # Use the release script
-   ./scripts/release.sh 1.0.0
-   git push origin v1.0.0
-   ```
+### Package Maintenance
 
-### 3. Private Composer Repository (Optional)
+#### Update Package Information
 
-For enterprise distributions or pre-release versions.
+```bash
+# If auto-update fails, manually update:
+curl -XPOST -H'content-type:application/json' \
+  'https://packagist.org/api/update-package?username=ogini-search&apiToken=YOUR_API_TOKEN' \
+  -d'{"repository":{"url":"https://github.com/ogini-search/laravel-scout-driver"}}'
+```
 
-#### Setup Private Repository
+#### Monitor Package Statistics
 
-1. **Satis Setup** (Self-hosted)
-   ```json
-   {
-     "name": "Ogini Private Repository",
-     "homepage": "https://packages.ogini.com",
-     "repositories": [
-       {
-         "type": "vcs",
-         "url": "https://github.com/ogini-search/laravel-scout-driver"
-       }
-     ],
-     "require-all": true
-   }
-   ```
+- Download statistics: https://packagist.org/packages/ogini-search/laravel-scout-driver/stats
+- Dependents: https://packagist.org/packages/ogini-search/laravel-scout-driver/dependents
 
-2. **Composer Configuration**
-   ```json
-   {
-     "repositories": [
-       {
-         "type": "composer",
-         "url": "https://packages.ogini.com"
-       }
-     ]
-   }
-   ```
+## GitHub Releases
 
-## Distribution Checklist
+### Automated Release Creation
 
-### Pre-Release Validation
+The release script automatically creates GitHub releases with:
 
-- [ ] All tests passing
-- [ ] Documentation up to date
-- [ ] Version number updated in relevant files
-- [ ] Changelog updated
-- [ ] Breaking changes documented
-- [ ] Security review completed
-- [ ] License file present and correct
+- Release notes from CHANGELOG.md
+- Downloadable source code archives
+- Version tags
+- Pre-release flags for beta versions
 
-### Release Steps
+### Manual Release Creation
 
-1. **Prepare Release**
-   - [ ] Run `./scripts/release.sh [version] --dry-run` to preview
-   - [ ] Review generated changelog
-   - [ ] Verify test suite passes
-   - [ ] Check for security vulnerabilities
+If GitHub CLI is not available:
 
-2. **Create Release**
-   - [ ] Run `./scripts/release.sh [version]`
-   - [ ] Push tag: `git push origin v[version]`
-   - [ ] Verify GitHub release created
-   - [ ] Confirm Packagist update
+1. Go to https://github.com/ogini-search/laravel-scout-driver/releases/new
+2. Choose the version tag (e.g., `v1.1.0`)
+3. Set release title: "Release 1.1.0"
+4. Copy release notes from CHANGELOG.md
+5. Attach any additional files if needed
+6. Publish release
 
-3. **Post-Release**
-   - [ ] Test installation: `composer require ogini-search/laravel-scout-driver`
-   - [ ] Verify package download from Packagist
-   - [ ] Update documentation websites
-   - [ ] Announce release (if applicable)
+### Release Notes Format
 
-### Version Numbering
+```markdown
+## What's Changed
 
-Follow [Semantic Versioning](https://semver.org/):
+### New Features
+- Feature 1 description
+- Feature 2 description
 
-- **MAJOR** (X.0.0): Breaking changes
-- **MINOR** (1.X.0): New features, backward compatible
-- **PATCH** (1.0.X): Bug fixes, backward compatible
+### Bug Fixes
+- Bug fix 1 description
+- Bug fix 2 description
 
-#### Pre-release Versions
+### Improvements
+- Performance improvement 1
+- Performance improvement 2
 
-- **Alpha**: `1.0.0-alpha.1` (internal testing)
-- **Beta**: `1.0.0-beta.1` (external testing)
-- **Release Candidate**: `1.0.0-rc.1` (final testing)
+### Breaking Changes
+- Breaking change description (for major versions)
 
-### Package Metadata
+## Upgrade Guide
 
-#### composer.json Requirements
+Instructions for upgrading from previous version...
 
-```json
-{
-  "name": "ogini-search/laravel-scout-driver",
-  "description": "Laravel Scout driver for OginiSearch",
-  "type": "library",
-  "license": "MIT",
-  "keywords": ["laravel", "scout", "search", "ogini"],
-  "homepage": "https://github.com/ogini-search/laravel-scout-driver",
-  "support": {
-    "issues": "https://github.com/ogini-search/laravel-scout-driver/issues",
-    "docs": "https://github.com/ogini-search/laravel-scout-driver#readme",
-    "source": "https://github.com/ogini-search/laravel-scout-driver"
-  }
+## Full Changelog
+https://github.com/ogini-search/laravel-scout-driver/compare/v1.0.0...v1.1.0
+```
+
+## Update Management
+
+### Update Checker Service
+
+The package includes an automated update checking system:
+
+```php
+// Check for updates programmatically
+$updateChecker = app(UpdateChecker::class);
+$updates = $updateChecker->checkForUpdates();
+
+if ($updates['has_update']) {
+    // Handle update notification
 }
 ```
 
-#### Required Files
+### Command Line Interface
 
-- [ ] `composer.json` - Package definition
-- [ ] `README.md` - Installation and usage instructions
-- [ ] `LICENSE.md` - MIT license
-- [ ] `CHANGELOG.md` - Version history
-- [ ] `CONTRIBUTING.md` - Contribution guidelines
-- [ ] `src/` - Source code directory
-- [ ] `tests/` - Test suite
+```bash
+# Check for updates
+php artisan ogini:check-updates
 
-### Quality Gates
+# Check for updates with verbose output
+php artisan ogini:check-updates --verbose
 
-#### Automated Checks
+# Force refresh update cache
+php artisan ogini:check-updates --refresh
+```
 
-- **CI/CD Pipeline**: All tests must pass
-- **Code Coverage**: Minimum 90% coverage
-- **Static Analysis**: PHPStan level 8
-- **Security Scan**: No known vulnerabilities
-- **Dependency Check**: All dependencies up to date
+### Update Notifications
 
-#### Manual Review
+Configure automatic update notifications in `config/ogini.php`:
 
-- **Documentation Review**: Accuracy and completeness
-- **API Consistency**: Laravel conventions followed
-- **Performance Check**: Benchmarks within acceptable limits
-- **Security Review**: Input validation and authentication
+```php
+'update_notifications' => [
+    'enabled' => true,
+    
+    'email' => [
+        'enabled' => false,
+        'recipients' => ['admin@example.com'],
+    ],
+    
+    'slack' => [
+        'enabled' => false,
+        'webhook_url' => env('OGINI_SLACK_WEBHOOK'),
+    ],
+    
+    'log' => [
+        'enabled' => true,
+        'level' => 'info', // info, warning, error
+    ],
+],
+```
 
-## Troubleshooting Distribution Issues
+## Security Updates
 
-### Common Issues
+### Security Release Process
 
-1. **Packagist Not Updating**
-   - Check webhook configuration
-   - Manually trigger update on Packagist
-   - Verify tag format (must be `vX.Y.Z`)
+1. **Critical Security Issues:**
+   - Immediate patch release
+   - Security advisory on GitHub
+   - Notification to all users
 
-2. **Composer Install Fails**
-   - Check minimum stability requirements
-   - Verify dependency constraints
-   - Review autoload configuration
+2. **Security Release Identification:**
+   - Version bump with security flag
+   - Clear security warning in release notes
+   - Documentation of vulnerability and fix
 
-3. **GitHub Release Not Created**
-   - Check GitHub Actions permissions
-   - Verify `GITHUB_TOKEN` secret
-   - Review workflow YAML syntax
+3. **Communication:**
+   - GitHub Security Advisory
+   - Package changelog
+   - Email notifications (if configured)
+   - Social media announcements
 
-### Support Channels
+### Security Update Detection
 
-- **GitHub Issues**: Technical problems and bugs
-- **Discussions**: Questions and feature requests
-- **Email**: security@oginisearch.com (security issues only)
+The update checker automatically detects security updates by:
 
-## Monitoring and Analytics
+- Analyzing release notes for security keywords
+- Checking GitHub security advisories
+- Flagging updates with high priority
 
-### Package Metrics
+### Response Procedures
 
-- **Download Statistics**: Monitor via Packagist
-- **GitHub Stars/Forks**: Community interest
-- **Issue Resolution Time**: Support quality
-- **Version Adoption**: Upgrade patterns
+When a security update is available:
 
-### Monitoring Tools
+1. **Immediate Assessment:**
+   - Review severity and impact
+   - Determine upgrade urgency
+   - Check for breaking changes
 
-- **Packagist**: Download statistics and version info
-- **GitHub Insights**: Repository analytics
-- **Composer Audit**: Security vulnerability tracking
-- **Dependabot**: Automated dependency updates
+2. **Testing Process:**
+   - Test in development environment
+   - Verify fix addresses security issue
+   - Ensure no functionality regression
+
+3. **Deployment:**
+   - Schedule emergency deployment if critical
+   - Follow normal deployment for low-severity issues
+   - Monitor application after update
+
+## Documentation Maintenance
+
+### Documentation Sources
+
+1. **README.md** - Primary package documentation
+2. **CHANGELOG.md** - Version history and changes
+3. **CONTRIBUTING.md** - Development guidelines
+4. **docs/** - Detailed documentation
+5. **API Documentation** - Generated from code comments
+
+### Update Procedures
+
+#### Version Release Documentation
+
+1. Update README.md version badges
+2. Add changelog entry
+3. Update any version-specific documentation
+4. Regenerate API documentation if needed
+
+#### Continuous Documentation
+
+- Keep examples current with latest version
+- Update configuration options
+- Maintain compatibility matrices
+- Update troubleshooting guides
+
+## Quality Assurance
+
+### Pre-Release Quality Gates
+
+All releases must pass:
+
+1. **Full Test Suite:**
+   ```bash
+   composer test # 430/430 tests must pass
+   ```
+
+2. **Code Analysis:**
+   ```bash
+   composer analyse # No static analysis errors
+   ```
+
+3. **Security Scan:**
+   ```bash
+   composer audit # No known vulnerabilities
+   ```
+
+4. **Performance Benchmarks:**
+   - Indexing performance within acceptable range
+   - Search response times maintained
+   - Memory usage within limits
+
+### Release Validation
+
+```bash
+# Complete validation before release
+composer run validate-release
+```
+
+This command runs:
+- `composer validate` - Validates composer.json
+- `composer test` - Runs full test suite
+- `composer analyse` - Static code analysis
+
+### Post-Release Monitoring
+
+After each release:
+
+1. **Package Installation Test:**
+   ```bash
+   # Test fresh installation
+   composer create-project --prefer-dist laravel/laravel test-app
+   cd test-app
+   composer require ogini-search/laravel-scout-driver
+   ```
+
+2. **Integration Testing:**
+   - Test with different Laravel versions
+   - Verify example code works
+   - Check documentation accuracy
+
+3. **Community Feedback:**
+   - Monitor GitHub issues
+   - Review Packagist comments
+   - Track download statistics
+
+### Rollback Procedures
+
+If a release has critical issues:
+
+1. **Immediate Response:**
+   ```bash
+   # Tag a quick patch release
+   git tag -a v1.1.1 -m "Hotfix for critical issue"
+   git push origin v1.1.1
+   ```
+
+2. **Communication:**
+   - GitHub issue explaining the problem
+   - Updated documentation
+   - Clear upgrade path for affected users
+
+3. **Prevention:**
+   - Add tests to prevent regression
+   - Update quality gates
+   - Review release process
 
 ---
 
-*Last updated: 6th June, 2025*
+## Automation Scripts
+
+### Release Script Usage
+
+```bash
+# Show help
+./scripts/release.sh --help
+
+# Dry run (shows what would be done)
+./scripts/release.sh --dry-run patch
+
+# Full patch release
+./scripts/release.sh patch
+
+# Prerelease
+./scripts/release.sh prerelease
+```
+
+### GitHub Actions (Future Enhancement)
+
+Consider adding automated workflows for:
+
+- Automated testing on pull requests
+- Automatic release creation on version tags
+- Security scanning
+- Documentation generation
+- Package validation
+
+---
+
+*Last Updated: $(date '+%Y-%m-%d')*
 *Version: 1.0.0* 
