@@ -50,7 +50,11 @@ jobs:
           composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction --no-progress
 
       - name: Execute tests
-        run: vendor/bin/phpunit --testsuite=Unit,Integration --exclude-group=quality-assurance,benchmarks,load-tests
+        timeout-minutes: 10
+        run: |
+          echo "Starting tests at $(date)"
+          vendor/bin/phpunit --testsuite=Unit,Integration --exclude-group=quality-assurance,benchmarks,load-tests
+          echo "Tests completed at $(date)"
 
       - name: Upload coverage reports (PHP 8.3, Laravel 11 only)
         if: matrix.php == '8.3' && matrix.laravel == '11.*'
@@ -85,7 +89,11 @@ jobs:
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Run PHPStan
-        run: composer analyse
+        timeout-minutes: 5
+        run: |
+          echo "Starting PHPStan analysis at $(date)"
+          composer analyse
+          echo "PHPStan completed at $(date)"
 
       - name: Check coding standards
         run: |
