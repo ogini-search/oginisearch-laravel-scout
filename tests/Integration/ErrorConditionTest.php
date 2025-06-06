@@ -18,6 +18,9 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Mockery;
 
+/**
+ * @group error-conditions
+ */
 class ErrorConditionTest extends IntegrationTestCase
 {
     protected function setUp(): void
