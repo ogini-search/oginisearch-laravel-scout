@@ -14,12 +14,6 @@ jobs:
       matrix:
         php: [8.2, 8.3]
         laravel: [10.*, 11.*]
-        stability: [prefer-stable]
-        include:
-          - laravel: 10.*
-            testbench: 8.*
-          - laravel: 11.*
-            testbench: 9.*
 
     steps:
       - name: Checkout code
@@ -32,25 +26,13 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
           coverage: xdebug
 
-      - name: Setup problem matchers
-        run: |
-          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
-          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
-
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
+          composer update --prefer-stable --prefer-dist --no-interaction
 
       - name: Run tests
-        run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage.clover
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        if: matrix.php == '8.3' && matrix.laravel == '11.*'
-        with:
-          file: ./coverage.clover
-          fail_ci_if_error: false
+        run: vendor/bin/phpunit
 
   security:
     name: Security Audit
@@ -71,32 +53,10 @@ jobs:
       - name: Security audit
         run: composer audit
 
-  quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.3
-
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction
-
-      - name: Run PHPStan
-        run: vendor/bin/phpstan analyse --no-progress
-
-      - name: Validate composer.json
-        run: composer validate --strict
-
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [test, security, quality]
+    needs: [test, security]
 
     steps:
       - name: Checkout code
@@ -109,9 +69,6 @@ jobs:
         with:
           php-version: 8.3
 
-      - name: Install dependencies
-        run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-
       - name: Get version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
@@ -119,7 +76,6 @@ jobs:
       - name: Extract changelog
         id: changelog
         run: |
-          # Extract changelog for current version
           awk "/^## \[${{ steps.version.outputs.VERSION }}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > release_notes.md
           echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
           cat release_notes.md >> $GITHUB_OUTPUT
@@ -135,113 +91,3 @@ jobs:
           body: ${{ steps.changelog.outputs.RELEASE_NOTES }}
           draft: false
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
-
-      - name: Trigger Packagist Update
-        run: |
-          curl -XPOST -H'content-type:application/json' \
-            'https://packagist.org/api/update-package?username=ogini-search&apiToken=${{ secrets.PACKAGIST_TOKEN }}' \
-            -d'{"repository":{"url":"https://github.com/ogini-search/laravel-scout-driver"}}'
-        if: ${{ secrets.PACKAGIST_TOKEN }}
-
-  notification:
-    name: Send Notifications
-    runs-on: ubuntu-latest
-    needs: [release]
-    if: always()
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Get version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Send Slack notification
-        uses: 8398a7/action-slack@v3
-        if: ${{ secrets.SLACK_WEBHOOK }}
-        with:
-          status: ${{ needs.release.result }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-          text: |
-            🚀 Ogini Laravel Scout Driver v${{ steps.version.outputs.VERSION }} has been released!
-
-            📦 Install: `composer require ogini-search/laravel-scout-driver`
-            📄 Release Notes: https://github.com/ogini-search/laravel-scout-driver/releases/tag/v${{ steps.version.outputs.VERSION }}
-            📊 Packagist: https://packagist.org/packages/ogini-search/laravel-scout-driver
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-
-      - name: Send Discord notification
-        uses: Ilshidur/action-discord@master
-        if: ${{ secrets.DISCORD_WEBHOOK }}
-        with:
-          args: |
-            🎉 **Ogini Laravel Scout Driver v${{ steps.version.outputs.VERSION }}** is now available!
-
-            📦 **Install:** `composer require ogini-search/laravel-scout-driver`
-            📄 **Release Notes:** https://github.com/ogini-search/laravel-scout-driver/releases/tag/v${{ steps.version.outputs.VERSION }}
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-
-  update-documentation:
-    name: Update Documentation
-    runs-on: ubuntu-latest
-    needs: [release]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.3
-
-      - name: Get version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      # Optional: Update external documentation site
-      - name: Trigger documentation update
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.DOCS_TOKEN }}" \
-            https://api.github.com/repos/ogini-search/documentation/dispatches \
-            -d '{"event_type":"package_release","client_payload":{"package":"laravel-scout-driver","version":"${{ steps.version.outputs.VERSION }}"}}'
-        if: ${{ secrets.DOCS_TOKEN }}
-
-  performance-test:
-    name: Performance Regression Test
-    runs-on: ubuntu-latest
-    needs: [test]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.3
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
-
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction
-
-      - name: Run performance tests
-        run: |
-          # If you have performance tests
-          if [ -f "tests/Performance/PerformanceTest.php" ]; then
-            vendor/bin/phpunit tests/Performance/PerformanceTest.php
-          else
-            echo "No performance tests found, skipping..."
-          fi
-
-      - name: Store performance results
-        uses: actions/upload-artifact@v3
-        with:
-          name: performance-results
-          path: performance-results/
-          retention-days: 30

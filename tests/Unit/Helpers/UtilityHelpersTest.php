@@ -171,6 +171,9 @@ class UtilityHelpersTest extends TestCase
         $results = ['total' => 50, 'took' => 150, 'max_score' => 5.5];
 
         UtilityHelpers::debugSearchPerformance('test query', $results, 0.5);
+
+        // Assert that the method executed without throwing exceptions
+        $this->assertTrue(true);
     }
 
     /** @test */
@@ -184,6 +187,9 @@ class UtilityHelpersTest extends TestCase
         $results = ['total' => 50];
 
         UtilityHelpers::debugSearchPerformance('test query', $results, 1.5);
+
+        // Assert that the method executed without throwing exceptions
+        $this->assertTrue(true);
     }
 
     /** @test */

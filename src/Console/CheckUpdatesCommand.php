@@ -10,7 +10,7 @@ class CheckUpdatesCommand extends Command
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'ogini:check-updates 
+    protected $signature = 'ogini:check-updates
                             {--clear-cache : Clear the update cache before checking}
                             {--security-only : Only show security updates}
                             {--json : Output in JSON format}';

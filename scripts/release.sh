@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Ogini Laravel Scout Driver Release Script
-# Usage: ./scripts/release.sh [version] [--dry-run]
+# Release Automation Script for Ogini Laravel Scout Driver
+# Usage: ./scripts/release.sh [version_type]
+# version_type: patch|minor|major|prerelease|prepatch|preminor|premajor
 
 set -e
 
@@ -14,284 +15,403 @@ NC='\033[0m' # No Color
 
 # Configuration
 PACKAGE_NAME="ogini-search/laravel-scout-driver"
-MAIN_BRANCH="main"
-CHANGELOG_FILE="CHANGELOG.md"
-COMPOSER_FILE="composer.json"
+BRANCH="main"
+REMOTE="origin"
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+# Functions
+log_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+log_success() {
+    echo -e "${GREEN}✅ $1${NC}"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+log_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+log_error() {
+    echo -e "${RED}❌ $1${NC}"
 }
 
-# Function to validate version format
-validate_version() {
-    local version=$1
-    if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[0-9]+)?)?$ ]]; then
-        print_error "Invalid version format: $version"
-        print_error "Expected format: X.Y.Z or X.Y.Z-suffix"
-        print_error "Examples: 1.0.0, 1.0.0-beta, 1.0.0-rc.1"
+# Check if we're in the correct directory
+check_directory() {
+    if [[ ! -f "composer.json" || ! -f "src/OginiServiceProvider.php" ]]; then
+        log_error "This script must be run from the root of the Laravel Scout Driver project"
         exit 1
     fi
 }
 
-# Function to check if we're on the main branch
-check_branch() {
-    local current_branch=$(git branch --show-current)
-    if [ "$current_branch" != "$MAIN_BRANCH" ]; then
-        print_error "Must be on $MAIN_BRANCH branch to create a release"
-        print_error "Current branch: $current_branch"
-        exit 1
-    fi
-}
-
-# Function to check if working directory is clean
-check_working_directory() {
-    if [ -n "$(git status --porcelain)" ]; then
-        print_error "Working directory is not clean"
-        print_error "Please commit or stash your changes before creating a release"
+# Check if working directory is clean
+check_git_status() {
+    log_info "Checking git status..."
+    
+    if [[ -n $(git status --porcelain) ]]; then
+        log_error "Working directory is not clean. Please commit or stash your changes."
         git status --short
         exit 1
     fi
+    
+    log_success "Working directory is clean"
 }
 
-# Function to check if tag already exists
-check_tag_exists() {
-    local version=$1
-    local tag="v$version"
+# Check if we're on the correct branch
+check_branch() {
+    local current_branch=$(git rev-parse --abbrev-ref HEAD)
     
-    if git tag -l | grep -q "^$tag$"; then
-        print_error "Tag $tag already exists"
-        exit 1
+    if [[ "$current_branch" != "$BRANCH" ]]; then
+        log_warning "You're on branch '$current_branch', not '$BRANCH'"
+        read -p "Do you want to continue? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log_info "Aborting release"
+            exit 0
+        fi
     fi
 }
 
-# Function to run tests
+# Pull latest changes
+pull_latest() {
+    log_info "Pulling latest changes from $REMOTE/$BRANCH..."
+    git pull $REMOTE $BRANCH
+    log_success "Repository is up to date"
+}
+
+# Run tests
 run_tests() {
-    print_status "Running tests..."
+    log_info "Running test suite..."
     
     if ! composer test; then
-        print_error "Tests failed. Cannot proceed with release."
+        log_error "Tests failed. Please fix all tests before releasing."
         exit 1
     fi
     
-    print_success "All tests passed"
+    log_success "All tests passed"
 }
 
-# Function to update changelog
-update_changelog() {
+# Get current version from composer.json
+get_current_version() {
+    php -r "
+        \$composer = json_decode(file_get_contents('composer.json'), true);
+        echo \$composer['version'] ?? '0.0.0';
+    "
+}
+
+# Calculate new version
+calculate_new_version() {
+    local version_type=$1
+    local current_version=$(get_current_version)
+    
+    log_info "Current version: $current_version"
+    
+    # Parse version components
+    IFS='.' read -ra VERSION_PARTS <<< "$current_version"
+    local major=${VERSION_PARTS[0]}
+    local minor=${VERSION_PARTS[1]}
+    local patch=${VERSION_PARTS[2]}
+    
+    case $version_type in
+        "patch")
+            patch=$((patch + 1))
+            ;;
+        "minor")
+            minor=$((minor + 1))
+            patch=0
+            ;;
+        "major")
+            major=$((major + 1))
+            minor=0
+            patch=0
+            ;;
+        "prerelease")
+            if [[ $current_version == *"-"* ]]; then
+                # Increment prerelease number
+                local pre_version=${current_version##*-}
+                local base_version=${current_version%-*}
+                local pre_num=${pre_version##*.}
+                local pre_base=${pre_version%.*}
+                echo "${base_version}-${pre_base}.$((pre_num + 1))"
+                return
+            else
+                echo "${current_version}-beta.1"
+                return
+            fi
+            ;;
+        *)
+            log_error "Invalid version type: $version_type"
+            log_info "Valid types: patch, minor, major, prerelease"
+            exit 1
+            ;;
+    esac
+    
+    echo "$major.$minor.$patch"
+}
+
+# Update version in files
+update_version_files() {
+    local new_version=$1
+    
+    log_info "Updating version to $new_version..."
+    
+    # Update composer.json
+    php -r "
+        \$composer = json_decode(file_get_contents('composer.json'), true);
+        \$composer['version'] = '$new_version';
+        file_put_contents('composer.json', json_encode(\$composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
+    "
+    
+    # Update version constant in service provider
+    sed -i.bak "s/const VERSION = '[^']*'/const VERSION = '$new_version'/" src/OginiServiceProvider.php
+    rm -f src/OginiServiceProvider.php.bak
+    
+    # Update README.md version badges
+    sed -i.bak "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$new_version/g" README.md
+    rm -f README.md.bak
+    
+    log_success "Version updated in all files"
+}
+
+# Generate changelog entry
+generate_changelog_entry() {
     local version=$1
-    local date=$(date +%Y-%m-%d)
+    local date=$(date '+%Y-%m-%d')
     
-    print_status "Updating changelog..."
+    log_info "Generating changelog entry for version $version..."
     
-    # Create a temporary file
-    local temp_file=$(mktemp)
+    # Get commits since last tag
+    local last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+    local commits
     
-    # Check if changelog exists
-    if [ ! -f "$CHANGELOG_FILE" ]; then
-        print_error "Changelog file not found: $CHANGELOG_FILE"
-        exit 1
+    if [[ -n "$last_tag" ]]; then
+        commits=$(git log --oneline --no-merges ${last_tag}..HEAD)
+    else
+        commits=$(git log --oneline --no-merges)
     fi
     
-    # Replace [Unreleased] with version and date
-    sed "s/## \[Unreleased\]/## [Unreleased]\n\n## [$version] - $date/" "$CHANGELOG_FILE" > "$temp_file"
+    # Create changelog entry
+    local changelog_entry="## [$version] - $date"$'\n\n'
     
-    # Replace TBD with actual date in existing version if present
-    sed -i.bak "s/## \[$version\] - TBD/## [$version] - $date/" "$temp_file"
+    if [[ -n "$commits" ]]; then
+        changelog_entry+="### Changes"$'\n'
+        while IFS= read -r commit; do
+            local commit_msg=$(echo "$commit" | cut -d' ' -f2-)
+            changelog_entry+="- $commit_msg"$'\n'
+        done <<< "$commits"
+    else
+        changelog_entry+="- No changes since last release"$'\n'
+    fi
     
-    # Move temp file back
-    mv "$temp_file" "$CHANGELOG_FILE"
+    changelog_entry+=$'\n'
     
-    print_success "Changelog updated for version $version"
+    # Prepend to CHANGELOG.md
+    if [[ -f "CHANGELOG.md" ]]; then
+        # Read existing changelog
+        local existing_changelog=$(cat CHANGELOG.md)
+        
+        # Write new entry followed by existing content
+        {
+            echo "# Changelog"
+            echo ""
+            echo "All notable changes to this project will be documented in this file."
+            echo ""
+            echo "$changelog_entry"
+            # Skip the header of existing changelog
+            echo "$existing_changelog" | sed '1,/^## \[/d' | sed '1i\
+## ['
+        } > CHANGELOG.md.tmp
+        mv CHANGELOG.md.tmp CHANGELOG.md
+    else
+        # Create new changelog
+        {
+            echo "# Changelog"
+            echo ""
+            echo "All notable changes to this project will be documented in this file."
+            echo ""
+            echo "$changelog_entry"
+        } > CHANGELOG.md
+    fi
+    
+    log_success "Changelog updated"
 }
 
-# Function to commit and tag
+# Create release notes
+create_release_notes() {
+    local version=$1
+    
+    log_info "Creating release notes for version $version..."
+    
+    # Extract the latest changelog entry
+    local release_notes_file="release-notes-$version.md"
+    
+    if [[ -f "CHANGELOG.md" ]]; then
+        # Extract just the current version's notes
+        awk "/^## \[$version\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > "$release_notes_file"
+    else
+        echo "Release $version" > "$release_notes_file"
+        echo "" >> "$release_notes_file"
+        echo "See CHANGELOG.md for details." >> "$release_notes_file"
+    fi
+    
+    log_success "Release notes created: $release_notes_file"
+}
+
+# Commit and tag
 commit_and_tag() {
     local version=$1
-    local tag="v$version"
     
-    print_status "Committing changelog and creating tag..."
+    log_info "Committing changes and creating tag..."
     
-    # Add changelog to git
-    git add "$CHANGELOG_FILE"
+    # Add changed files
+    git add composer.json src/OginiServiceProvider.php README.md CHANGELOG.md
     
-    # Commit if there are changes
-    if ! git diff --cached --quiet; then
-        git commit -m "chore: update changelog for $version"
-    fi
+    # Commit
+    git commit -m "chore: release version $version
+
+- Update version number to $version
+- Update changelog
+- Update documentation"
     
     # Create tag
-    git tag -a "$tag" -m "Release $version"
+    git tag -a "v$version" -m "Release version $version"
     
-    print_success "Created tag $tag"
+    log_success "Version committed and tagged"
 }
 
-# Function to generate release notes
-generate_release_notes() {
+# Push changes
+push_changes() {
     local version=$1
-    local temp_file=$(mktemp)
     
-    print_status "Generating release notes..."
+    log_info "Pushing changes to remote repository..."
     
-    # Extract version section from changelog
-    awk "/## \[$version\]/,/## \[.*\]/ { if (/## \[.*\]/ && !/## \[$version\]/) exit; print }" "$CHANGELOG_FILE" | head -n -1 > "$temp_file"
+    # Push commits
+    git push $REMOTE HEAD
     
-    echo "Release notes saved to: $temp_file"
-    cat "$temp_file"
+    # Push tags
+    git push $REMOTE "v$version"
     
-    rm "$temp_file"
+    log_success "Changes pushed to remote repository"
 }
 
-# Function to show help
+# Create GitHub release
+create_github_release() {
+    local version=$1
+    local release_notes_file="release-notes-$version.md"
+    
+    log_info "Creating GitHub release..."
+    
+    if command -v gh &> /dev/null; then
+        if [[ -f "$release_notes_file" ]]; then
+            gh release create "v$version" \
+                --title "Release $version" \
+                --notes-file "$release_notes_file" \
+                --latest
+        else
+            gh release create "v$version" \
+                --title "Release $version" \
+                --notes "Release $version" \
+                --latest
+        fi
+        
+        log_success "GitHub release created"
+    else
+        log_warning "GitHub CLI not found. Please create the release manually at:"
+        log_warning "https://github.com/$PACKAGE_NAME/releases/new?tag=v$version"
+    fi
+}
+
+# Cleanup
+cleanup() {
+    local version=$1
+    
+    # Remove temporary release notes file
+    rm -f "release-notes-$version.md"
+    
+    log_success "Cleanup completed"
+}
+
+# Main release function
+main() {
+    local version_type=${1:-"patch"}
+    
+    echo "🚀 Starting release process for $PACKAGE_NAME"
+    echo "================================================"
+    
+    # Pre-release checks
+    check_directory
+    check_git_status
+    check_branch
+    pull_latest
+    run_tests
+    
+    # Calculate new version
+    local new_version=$(calculate_new_version "$version_type")
+    
+    log_info "Preparing to release version: $new_version"
+    read -p "Continue with release $new_version? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log_info "Release cancelled"
+        exit 0
+    fi
+    
+    # Release process
+    update_version_files "$new_version"
+    generate_changelog_entry "$new_version"
+    create_release_notes "$new_version"
+    commit_and_tag "$new_version"
+    push_changes "$new_version"
+    create_github_release "$new_version"
+    cleanup "$new_version"
+    
+    echo ""
+    echo "🎉 Release $new_version completed successfully!"
+    echo "================================================"
+    log_success "Package released: $PACKAGE_NAME v$new_version"
+    log_info "Next steps:"
+    echo "  1. Submit to Packagist (if not auto-submitted)"
+    echo "  2. Update documentation"
+    echo "  3. Announce the release"
+}
+
+# Help function
 show_help() {
     cat << EOF
 Ogini Laravel Scout Driver Release Script
 
-Usage: $0 [version] [options]
+Usage: $0 [version_type]
 
-Arguments:
-  version     The version to release (e.g., 1.0.0, 1.0.0-beta)
-
-Options:
-  --dry-run   Show what would be done without making changes
-  --help      Show this help message
+Version Types:
+  patch      Increment patch version (0.0.x)
+  minor      Increment minor version (0.x.0)
+  major      Increment major version (x.0.0)
+  prerelease Increment prerelease version (0.0.0-beta.x)
 
 Examples:
-  $0 1.0.0                 # Release version 1.0.0
-  $0 1.0.0-beta --dry-run  # Preview release of 1.0.0-beta
-  $0 --help                # Show this help
+  $0 patch      # 1.0.0 -> 1.0.1
+  $0 minor      # 1.0.0 -> 1.1.0
+  $0 major      # 1.0.0 -> 2.0.0
+  $0 prerelease # 1.0.0 -> 1.0.0-beta.1
 
 Requirements:
-  - Must be on $MAIN_BRANCH branch
-  - Working directory must be clean
-  - All tests must pass
-  - Tag must not already exist
+  - Clean git working directory
+  - All tests passing
+  - Internet connection for pushing to GitHub
 
-The script will:
-  1. Validate version format
-  2. Check branch and working directory
-  3. Run tests
-  4. Update changelog
-  5. Commit changes and create git tag
-  6. Generate release notes
-
-After running this script, push the tag to trigger the GitHub release workflow:
-  git push origin v[version]
+Optional:
+  - GitHub CLI (gh) for automatic release creation
 EOF
 }
 
-# Main function
-main() {
-    local version=""
-    local dry_run=false
-    
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --dry-run)
-                dry_run=true
-                shift
-                ;;
-            --help)
-                show_help
-                exit 0
-                ;;
-            -*)
-                print_error "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
-            *)
-                if [ -z "$version" ]; then
-                    version=$1
-                else
-                    print_error "Multiple versions specified"
-                    show_help
-                    exit 1
-                fi
-                shift
-                ;;
-        esac
-    done
-    
-    # Check if version is provided
-    if [ -z "$version" ]; then
-        print_error "Version is required"
-        show_help
-        exit 1
-    fi
-    
-    # Display header
-    echo "========================================"
-    echo "  Ogini Laravel Scout Driver Release"
-    echo "========================================"
-    echo ""
-    
-    if [ "$dry_run" = true ]; then
-        print_warning "DRY RUN MODE - No changes will be made"
-        echo ""
-    fi
-    
-    print_status "Preparing release for version: $version"
-    echo ""
-    
-    # Validate version
-    validate_version "$version"
-    
-    # Check prerequisites
-    check_branch
-    check_working_directory
-    check_tag_exists "$version"
-    
-    # Run tests
-    run_tests
-    
-    if [ "$dry_run" = true ]; then
-        print_warning "DRY RUN: Would update changelog for version $version"
-        print_warning "DRY RUN: Would commit changes and create tag v$version"
-        print_warning "DRY RUN: Would generate release notes"
-        echo ""
-        print_status "To actually perform the release, run:"
-        print_status "$0 $version"
-        print_status ""
-        print_status "Then push the tag to trigger GitHub release:"
-        print_status "git push origin v$version"
-    else
-        # Update changelog
-        update_changelog "$version"
-        
-        # Commit and tag
-        commit_and_tag "$version"
-        
-        # Generate release notes
-        generate_release_notes "$version"
-        
-        echo ""
-        print_success "Release $version prepared successfully!"
-        echo ""
-        print_status "Next steps:"
-        print_status "1. Push the tag to trigger GitHub release workflow:"
-        print_status "   git push origin v$version"
-        print_status ""
-        print_status "2. The GitHub workflow will:"
-        print_status "   - Run tests"
-        print_status "   - Create GitHub release"
-        print_status "   - Update Packagist (if configured)"
-        echo ""
-    fi
-}
-
-# Run main function with all arguments
-main "$@" 
+# Script entry point
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    case ${1:-} in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            main "$@"
+            ;;
+    esac
+fi 

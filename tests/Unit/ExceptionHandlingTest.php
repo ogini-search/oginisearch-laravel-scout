@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace OginiScoutDriver\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use OginiScoutDriver\Exceptions\OginiException;
