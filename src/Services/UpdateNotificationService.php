@@ -10,9 +10,9 @@ use OginiScoutDriver\OginiServiceProvider;
 
 class UpdateNotificationService
 {
-    protected string $packageName = 'ogini-search/laravel-scout-driver';
+    protected string $packageName = 'ogini/oginisearch-laravel-scout';
     protected string $packagistApiUrl = 'https://packagist.org/packages/';
-    protected string $githubApiUrl = 'https://api.github.com/repos/ogini-search/laravel-scout-driver';
+    protected string $githubApiUrl = 'https://api.github.com/repos/ogini-search/oginisearch-laravel-scout';
     protected int $cacheLifetime = 3600; // 1 hour
 
     /**
@@ -421,6 +421,6 @@ class UpdateNotificationService
      */
     public function getUpdateCommand(): string
     {
-        return 'composer update ogini-search/laravel-scout-driver';
+        return 'composer update ogini/oginisearch-laravel-scout';
     }
 }

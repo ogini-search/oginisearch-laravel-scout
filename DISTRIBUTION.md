@@ -112,31 +112,31 @@ For beta releases:
 1. **Packagist (Primary)**
    - Official PHP package repository
    - Automatic installation via Composer
-   - URL: https://packagist.org/packages/ogini-search/laravel-scout-driver
+   - URL: https://packagist.org/packages/ogini/oginisearch-laravel-scout
 
 2. **GitHub Releases**
    - Source code distribution
    - Release notes and changelogs
-   - URL: https://github.com/ogini-search/laravel-scout-driver/releases
+   - URL: https://github.com/ogini-search/oginisearch-laravel-scout/releases
 
 ### Installation Methods
 
 #### Composer (Recommended)
 
 ```bash
-composer require ogini-search/laravel-scout-driver
+composer require ogini/oginisearch-laravel-scout
 ```
 
 #### Development Installation
 
 ```bash
-composer require ogini-search/laravel-scout-driver:dev-main
+composer require ogini/oginisearch-laravel-scout:dev-main
 ```
 
 #### Specific Version
 
 ```bash
-composer require ogini-search/laravel-scout-driver:^1.0
+composer require ogini/oginisearch-laravel-scout:^1.0
 ```
 
 ## Packagist Submission
@@ -150,7 +150,7 @@ composer require ogini-search/laravel-scout-driver:^1.0
 
 2. **Submit Package:**
    - Go to https://packagist.org/packages/submit
-   - Enter repository URL: `https://github.com/ogini-search/laravel-scout-driver`
+   - Enter repository URL: `https://github.com/ogini-search/oginisearch-laravel-scout`
    - Click "Check" and then "Submit"
 
 3. **Auto-Update Hook:**
@@ -167,14 +167,14 @@ composer require ogini-search/laravel-scout-driver:^1.0
 ```bash
 # If auto-update fails, manually update:
 curl -XPOST -H'content-type:application/json' \
-  'https://packagist.org/api/update-package?username=ogini-search&apiToken=YOUR_API_TOKEN' \
-  -d'{"repository":{"url":"https://github.com/ogini-search/laravel-scout-driver"}}'
+  'https://packagist.org/api/update-package?username=ogini&apiToken=YOUR_API_TOKEN' \
+-d'{"repository":{"url":"https://github.com/ogini-search/oginisearch-laravel-scout"}}'
 ```
 
 #### Monitor Package Statistics
 
-- Download statistics: https://packagist.org/packages/ogini-search/laravel-scout-driver/stats
-- Dependents: https://packagist.org/packages/ogini-search/laravel-scout-driver/dependents
+- Download statistics: https://packagist.org/packages/ogini/oginisearch-laravel-scout/stats
+- Dependents: https://packagist.org/packages/ogini/oginisearch-laravel-scout/dependents
 
 ## GitHub Releases
 
@@ -191,7 +191,7 @@ The release script automatically creates GitHub releases with:
 
 If GitHub CLI is not available:
 
-1. Go to https://github.com/ogini-search/laravel-scout-driver/releases/new
+1. Go to https://github.com/ogini-search/oginisearch-laravel-scout/releases/new
 2. Choose the version tag (e.g., `v1.1.0`)
 3. Set release title: "Release 1.1.0"
 4. Copy release notes from CHANGELOG.md
@@ -223,7 +223,7 @@ If GitHub CLI is not available:
 Instructions for upgrading from previous version...
 
 ## Full Changelog
-https://github.com/ogini-search/laravel-scout-driver/compare/v1.0.0...v1.1.0
+https://github.com/ogini-search/oginisearch-laravel-scout/compare/v1.0.0...v1.1.0
 ```
 
 ## Update Management
@@ -400,7 +400,7 @@ After each release:
    # Test fresh installation
    composer create-project --prefer-dist laravel/laravel test-app
    cd test-app
-   composer require ogini-search/laravel-scout-driver
+   composer require ogini/oginisearch-laravel-scout
    ```
 
 2. **Integration Testing:**

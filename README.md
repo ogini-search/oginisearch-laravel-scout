@@ -25,7 +25,7 @@ A comprehensive Laravel Scout driver for OginiSearch, providing full-text search
 1. Install the package via Composer:
 
 ```bash
-composer require ogini-search/laravel-scout-driver
+composer require ogini/oginisearch-laravel-scout
 ```
 
 2. Publish the configuration file:

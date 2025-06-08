@@ -15,8 +15,8 @@ We're excited that you're interested in contributing to the OginiSearch Laravel 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/ogini-search/laravel-scout-driver.git
-cd laravel-scout-driver
+git clone https://github.com/ogini-search/oginisearch-laravel-scout.git
+cd oginisearch-laravel-scout
 ```
 
 2. Install dependencies:

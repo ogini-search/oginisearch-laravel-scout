@@ -46,7 +46,7 @@ class CheckUpdatesCommand extends Command
 
         // Display current version
         $this->table(['Package', 'Current Version'], [
-            ['ogini-search/laravel-scout-driver', $updateInfo['current_version']],
+            ['ogini/oginisearch-laravel-scout', $updateInfo['current_version']],
         ]);
 
         // Check if there are updates
@@ -108,7 +108,7 @@ class CheckUpdatesCommand extends Command
         $this->line('   ' . $updateInfo['update_command']);
 
         if ($updateInfo['breaking_changes']) {
-            $this->line('   composer update ogini-search/laravel-scout-driver --with-dependencies');
+            $this->line('   composer update ogini/oginisearch-laravel-scout --with-dependencies');
         }
 
         $this->line('');

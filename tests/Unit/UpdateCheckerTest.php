@@ -167,7 +167,7 @@ class UpdateCheckerTest extends TestCase
             'name' => 'Release 1.1.0',
             'body' => '## Changes\n- New features\n- Bug fixes',
             'published_at' => '2024-01-01T00:00:00Z',
-            'html_url' => 'https://github.com/ogini-search/laravel-scout-driver/releases/tag/v1.1.0',
+            'html_url' => 'https://github.com/ogini-search/oginisearch-laravel-scout/releases/tag/v1.1.0',
             'prerelease' => false,
         ])));
 
@@ -176,7 +176,7 @@ class UpdateCheckerTest extends TestCase
         $this->assertTrue($updateInfo['has_update']);
         $this->assertEquals('1.0.0', $updateInfo['current_version']);
         $this->assertEquals('1.1.0', $updateInfo['latest_version']);
-        $this->assertEquals('composer update ogini-search/laravel-scout-driver', $updateInfo['update_command']);
+        $this->assertEquals('composer update ogini/oginisearch-laravel-scout', $updateInfo['update_command']);
         $this->assertFalse($updateInfo['security_update']);
         $this->assertFalse($updateInfo['breaking_changes']);
         $this->assertArrayHasKey('release_notes', $updateInfo);
@@ -205,7 +205,7 @@ class UpdateCheckerTest extends TestCase
             'name' => 'Security Release 1.0.1',
             'body' => 'This release fixes a critical security vulnerability CVE-2024-0001',
             'published_at' => '2024-01-01T00:00:00Z',
-            'html_url' => 'https://github.com/ogini-search/laravel-scout-driver/releases/tag/v1.0.1',
+            'html_url' => 'https://github.com/ogini-search/oginisearch-laravel-scout/releases/tag/v1.0.1',
             'prerelease' => false,
         ])));
 
@@ -237,7 +237,7 @@ class UpdateCheckerTest extends TestCase
             'name' => 'Release 2.0.0',
             'body' => 'Major version with breaking changes',
             'published_at' => '2024-01-01T00:00:00Z',
-            'html_url' => 'https://github.com/ogini-search/laravel-scout-driver/releases/tag/v2.0.0',
+            'html_url' => 'https://github.com/ogini-search/oginisearch-laravel-scout/releases/tag/v2.0.0',
             'prerelease' => false,
         ])));
 
@@ -317,7 +317,7 @@ class UpdateCheckerTest extends TestCase
             'name' => 'Release 1.1.0',
             'body' => 'Release notes content',
             'published_at' => '2024-01-01T00:00:00Z',
-            'html_url' => 'https://github.com/ogini-search/laravel-scout-driver/releases/tag/v1.1.0',
+            'html_url' => 'https://github.com/ogini-search/oginisearch-laravel-scout/releases/tag/v1.1.0',
             'prerelease' => false,
         ])));
 

@@ -14,7 +14,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PACKAGE_NAME="ogini-search/laravel-scout-driver"
+PACKAGE_NAME="ogini/oginisearch-laravel-scout"
 BRANCH="main"
 REMOTE="origin"
 
@@ -316,7 +316,7 @@ create_github_release() {
         log_success "GitHub release created"
     else
         log_warning "GitHub CLI not found. Please create the release manually at:"
-        log_warning "https://github.com/$PACKAGE_NAME/releases/new?tag=v$version"
+        log_warning "https://github.com/ogini-search/oginisearch-laravel-scout/releases/new?tag=v$version"
     fi
 }
 

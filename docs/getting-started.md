@@ -39,7 +39,7 @@ composer show laravel/scout
 ### Step 1: Install the Package
 
 ```bash
-composer require ogini-search/laravel-scout-driver
+composer require ogini/oginisearch-laravel-scout
 ```
 
 ### Step 2: Install Laravel Scout (if not already installed)
@@ -550,7 +550,7 @@ dd($results); // Check raw results
 
 - **Documentation**: Read our [complete documentation](./api-reference.md)
 - **Examples**: Check the [examples directory](../examples/)
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/ogini-search/laravel-scout-driver/issues)
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/ogini-search/oginisearch-laravel-scout/issues)
 - **Community**: Join our [Discord community](https://discord.gg/ogini)
 
 ### Performance Tips

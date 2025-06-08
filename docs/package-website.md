@@ -36,7 +36,7 @@ Get up and running in under 2 minutes:
 
 ```bash
 # Install the package
-composer require ogini-search/laravel-scout-driver
+composer require ogini/oginisearch-laravel-scout
 
 # Publish configuration
 php artisan vendor:publish --tag=ogini-config
@@ -265,7 +265,7 @@ php artisan scout:import "App\Models\Product" --chunk=500
 FROM php:8.2-fpm
 
 # Install OginiSearch driver
-RUN composer require ogini-search/laravel-scout-driver
+RUN composer require ogini/oginisearch-laravel-scout
 
 # Configure for production
 ENV OGINI_CACHE_ENABLED=true
@@ -298,7 +298,7 @@ spec:
 ## 🤝 Community & Support
 
 ### Get Help
-- **[GitHub Issues](https://github.com/ogini-search/laravel-scout-driver/issues)** - Report bugs and request features
+- **[GitHub Issues](https://github.com/ogini-search/oginisearch-laravel-scout/issues)** - Report bugs and request features
 - **[Discord Community](https://discord.gg/ogini)** - Chat with other developers
 - **[Stack Overflow](https://stackoverflow.com/questions/tagged/ogini-search)** - Ask technical questions
 
@@ -330,7 +330,7 @@ spec:
 Ready to revolutionize your Laravel application's search experience?
 
 ```bash
-composer require ogini-search/laravel-scout-driver
+composer require ogini/oginisearch-laravel-scout
 ```
 
 **Join thousands of developers** who have already transformed their applications with OginiSearch.
@@ -346,7 +346,7 @@ composer require ogini-search/laravel-scout-driver
 | [💻 Examples](./examples/) | Real-world implementations |
 | [🔧 API Reference](./docs/api-reference.md) | Complete method documentation |
 | [⚡ Benchmarks](./docs/benchmark-results.md) | Performance analysis |
-| [🐛 Issues](https://github.com/ogini-search/laravel-scout-driver/issues) | Report bugs |
+| [🐛 Issues](https://github.com/ogini-search/oginisearch-laravel-scout/issues) | Report bugs |
 | [💬 Discord](https://discord.gg/ogini) | Community chat |
 
 ---

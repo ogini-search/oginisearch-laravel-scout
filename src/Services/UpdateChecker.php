@@ -23,9 +23,9 @@ class UpdateChecker
             'connect_timeout' => 5,
         ]);
 
-        $this->packageName = 'ogini-search/laravel-scout-driver';
+        $this->packageName = 'ogini/oginisearch-laravel-scout';
         $this->packagistUrl = 'https://packagist.org/packages/' . $this->packageName . '.json';
-        $this->githubUrl = 'https://api.github.com/repos/ogini-search/laravel-scout-driver/releases/latest';
+        $this->githubUrl = 'https://api.github.com/repos/ogini-search/oginisearch-laravel-scout/releases/latest';
         $this->cacheMinutes = 60; // Cache results for 1 hour
 
         // Initialize currentVersion to avoid property access before initialization
@@ -114,7 +114,7 @@ class UpdateChecker
             'current_version' => $this->currentVersion,
             'latest_version' => $latestVersion,
             'release_notes' => $releaseNotes,
-            'update_command' => 'composer update ogini-search/laravel-scout-driver',
+            'update_command' => 'composer update ogini/oginisearch-laravel-scout',
             'security_update' => $this->isSecurityUpdate($releaseNotes),
             'breaking_changes' => $this->hasBreakingChanges($latestVersion),
         ];
@@ -213,7 +213,7 @@ class UpdateChecker
     protected function fetchReleaseNotesFromGitHub(string $version): array
     {
         try {
-            $url = "https://api.github.com/repos/ogini-search/laravel-scout-driver/releases/tags/v{$version}";
+            $url = "https://api.github.com/repos/ogini-search/oginisearch-laravel-scout/releases/tags/v{$version}";
             $response = $this->httpClient->get($url);
             $data = json_decode($response->getBody()->getContents(), true);
 

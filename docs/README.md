@@ -69,7 +69,7 @@ New to OginiSearch? Get up and running in under 5 minutes:
 
 ```bash
 # 1. Install the package
-composer require ogini-search/laravel-scout-driver
+composer require ogini/oginisearch-laravel-scout
 
 # 2. Publish configuration
 php artisan vendor:publish --tag=ogini-config
@@ -155,7 +155,7 @@ OGINI_LOG_PERFORMANCE=true
 ## 🤝 Community & Support
 
 ### Get Help
-- **[GitHub Issues](https://github.com/ogini-search/laravel-scout-driver/issues)** - Report bugs and request features
+- **[GitHub Issues](https://github.com/ogini-search/oginisearch-laravel-scout/issues)** - Report bugs and request features
 - **[Discord Community](https://discord.gg/ogini)** - Chat with other developers
 - **[Stack Overflow](https://stackoverflow.com/questions/tagged/ogini-search)** - Ask technical questions
 

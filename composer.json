@@ -1,6 +1,6 @@
 {
-  "name": "ogini-search/laravel-scout-driver",
-  "description": "Laravel Scout driver for OginiSearch - High-performance search engine integration",
+  "name": "ogini/oginisearch-laravel-scout",
+  "description": "OginiSearch Laravel Scout driver with PHP client - High-performance search engine integration",
   "type": "library",
   "license": "MIT",
   "version": "1.0.0",
@@ -9,16 +9,17 @@
     "scout",
     "search",
     "ogini",
-    "elasticsearch",
+    "oginisearch",
+    "search-engine",
     "full-text-search",
     "indexing",
     "faceted-search"
   ],
-  "homepage": "https://github.com/ogini-search/laravel-scout-driver",
+  "homepage": "https://github.com/ogini-search/oginisearch-laravel-scout",
   "support": {
-    "issues": "https://github.com/ogini-search/laravel-scout-driver/issues",
-    "docs": "https://github.com/ogini-search/laravel-scout-driver#readme",
-    "source": "https://github.com/ogini-search/laravel-scout-driver",
+    "issues": "https://github.com/ogini-search/oginisearch-laravel-scout/issues",
+    "docs": "https://github.com/ogini-search/oginisearch-laravel-scout#readme",
+    "source": "https://github.com/ogini-search/oginisearch-laravel-scout",
     "email": "support@oginisearch.com"
   },
   "authors": [
