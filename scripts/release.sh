@@ -1,4 +1,6 @@
 #!/bin/bash
+# When you're ready for your first official release
+#./scripts/release.sh major
 
 # Release Automation Script for Ogini Laravel Scout Driver
 # Usage: ./scripts/release.sh [version_type]

@@ -1,0 +1,141 @@
+name: ❓ Support Question
+description: Get help with implementation or ask questions
+title: '[Question]: '
+labels: ['question', 'support']
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reaching out! We're here to help you with the OginiSearch Laravel Scout Driver.
+
+        **Before asking a question, please:**
+        - Check the [documentation](https://github.com/ogini-search/oginisearch-laravel-scout#readme)
+        - Search existing issues to see if your question has been answered
+        - Try the troubleshooting guide in our docs
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Prerequisites
+      description: Please confirm you've checked the following
+      options:
+        - label: I have read the documentation
+          required: true
+        - label: I have searched existing issues
+          required: true
+        - label: This is not a bug report (use the bug template instead)
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What type of help do you need?
+      options:
+        - 'Installation and Setup'
+        - 'Configuration'
+        - 'Search Implementation'
+        - 'Performance Optimization'
+        - 'Async Operations'
+        - 'Event System'
+        - 'Error Handling'
+        - 'Testing'
+        - 'Best Practices'
+        - 'Integration with other packages'
+        - 'Other'
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like help with?
+      placeholder: Please describe your question in detail...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide context about what you're trying to achieve
+      placeholder: |
+        What are you trying to build or accomplish?
+        What's your use case?
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What Have You Tried?
+      description: What solutions have you already attempted?
+      placeholder: |
+        - I tried...
+        - I looked at...
+        - I expected...
+    validations:
+      required: false
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Relevant Code
+      description: Share any relevant code (remove sensitive information)
+      render: php
+      placeholder: |
+        <?php
+        // Your code here
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Package Version
+      description: Which version are you using?
+      placeholder: 'e.g., 1.0.0'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: laravel_version
+    attributes:
+      label: Laravel Version
+      description: Which Laravel version?
+      options:
+        - '11.x'
+        - '10.x'
+        - '9.x'
+        - '8.x'
+        - 'Other'
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Any relevant environment details
+      placeholder: |
+        - PHP Version:
+        - Operating System:
+        - OginiSearch Server Version:
+        - Other relevant details:
+    validations:
+      required: false
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How urgent is this question?
+      options:
+        - 'Low - Learning/exploring'
+        - 'Medium - Development blocked'
+        - 'High - Production issue'
+    validations:
+      required: true
