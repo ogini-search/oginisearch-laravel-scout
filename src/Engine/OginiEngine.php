@@ -112,25 +112,26 @@ class OginiEngine extends Engine
             return;
         }
 
-        // Fallback to original implementation
-        $documents = [];
+        // Handle individual documents with proper update/create logic
         foreach ($models as $model) {
-            $documents[] = [
-                'id' => (string)$model->getScoutKey(),
-                'document' => $model->toSearchableArray(),
-            ];
-        }
+            $documentId = (string)$model->getScoutKey();
+            $documentData = $model->toSearchableArray();
 
-        try {
-            $this->client->bulkIndexDocuments($indexName, $documents);
-        } catch (OginiException $e) {
-            // Try individual indexing if bulk fails
-            foreach ($models as $model) {
-                $this->client->indexDocument(
-                    $indexName,
-                    (string)$model->getScoutKey(),
-                    $model->toSearchableArray()
-                );
+            try {
+                // Try to update first (for existing documents)
+                $this->client->updateDocument($indexName, $documentId, $documentData);
+            } catch (OginiException $updateException) {
+                // If update fails, try to index as new document
+                try {
+                    $this->client->indexDocument($indexName, $documentId, $documentData);
+                } catch (OginiException $indexException) {
+                    $this->logError('Failed to index/update document', [
+                        'index' => $indexName,
+                        'id' => $documentId,
+                        'update_error' => $updateException->getMessage(),
+                        'index_error' => $indexException->getMessage(),
+                    ]);
+                }
             }
         }
     }
