@@ -12,6 +12,7 @@ use OginiScoutDriver\Listeners\LogSearchActivity;
 use OginiScoutDriver\Services\UpdateChecker;
 use OginiScoutDriver\Services\UpdateNotificationService;
 use OginiScoutDriver\Console\CheckUpdatesCommand;
+use OginiScoutDriver\Console\OginiHealthCheckCommand;
 use Illuminate\Support\Facades\Event;
 
 class OginiServiceProvider extends ServiceProvider
@@ -70,6 +71,7 @@ class OginiServiceProvider extends ServiceProvider
 
             $this->commands([
                 CheckUpdatesCommand::class,
+                OginiHealthCheckCommand::class,
             ]);
         }
 

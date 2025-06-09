@@ -404,7 +404,7 @@ class OginiClientTest extends TestCase
         $httpClient = new Client(['handler' => $handlerStack]);
         $this->client->setHttpClient($httpClient);
 
-        $result = $this->client->indexDocument($indexName, $document, $documentId);
+        $result = $this->client->indexDocument($indexName, $documentId, $document);
 
         $this->assertEquals($responseData, $result);
     }
@@ -423,7 +423,7 @@ class OginiClientTest extends TestCase
         $httpClient = new Client(['handler' => $handlerStack]);
         $this->client->setHttpClient($httpClient);
 
-        $result = $this->client->indexDocument($indexName, $document);
+        $result = $this->client->indexDocument($indexName, 'auto-generated-id', $document);
 
         $this->assertEquals($responseData, $result);
     }
@@ -578,7 +578,7 @@ class OginiClientTest extends TestCase
         $httpClient = new Client(['handler' => $handlerStack]);
         $this->client->setHttpClient($httpClient);
 
-        $result = $this->client->search($indexName, $searchQuery, 10, 0);
+        $result = $this->client->search($indexName, 'smartphone', ['size' => 10, 'from' => 0, 'query' => $searchQuery['query']]);
 
         $this->assertEquals($responseData, $result);
     }

@@ -91,11 +91,11 @@ class OginiEngineTest extends TestCase
 
         $this->mockClient->shouldReceive('indexDocument')
             ->once()
-            ->with('test_index', [
+            ->with('test_index', '1', [
                 'title' => 'Test Title',
                 'content' => 'Test Content',
                 'status' => 'published'
-            ], '1')
+            ])
             ->andReturn(['success' => true]);
 
         $this->engine->update($models);
@@ -179,7 +179,7 @@ class OginiEngineTest extends TestCase
 
         $this->mockClient->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::type('array'), 10, 0)
+            ->with('test_index', 'test query', Mockery::type('array'))
             ->andReturn($searchResults);
 
         $result = $this->engine->search($builder);
@@ -208,7 +208,7 @@ class OginiEngineTest extends TestCase
 
         $this->mockClient->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::type('array'), 10, 10) // Page 2, 10 per page
+            ->with('test_index', 'test query', Mockery::type('array')) // Page 2, 10 per page
             ->andReturn($searchResults);
 
         $result = $this->engine->paginate($builder, 10, 2);
@@ -455,10 +455,12 @@ class OginiEngineTest extends TestCase
 
         $this->mockClient->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::on(function ($query) {
-                return $query['query']['match']['value'] === 'test search' &&
-                    $query['fields'] === ['title', 'content'];
-            }), null, null)
+            ->with('test_index', 'test search', Mockery::on(function ($options) {
+                return isset($options['query']['match']['value']) &&
+                    $options['query']['match']['value'] === 'test search' &&
+                    isset($options['fields']) &&
+                    $options['fields'] === ['title', 'content'];
+            }))
             ->andReturn(['data' => ['hits' => []]]);
 
         $result = $this->engine->search($builder);
@@ -480,10 +482,10 @@ class OginiEngineTest extends TestCase
 
         $this->mockClient->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::on(function ($query) {
-                return isset($query['filter']['bool']['must']) &&
-                    count($query['filter']['bool']['must']) === 2;
-            }), null, null)
+            ->with('test_index', '', Mockery::on(function ($options) {
+                return isset($options['filter']['bool']['must']) &&
+                    count($options['filter']['bool']['must']) === 2;
+            }))
             ->andReturn(['data' => ['hits' => []]]);
 
         $result = $this->engine->search($builder);
@@ -505,9 +507,9 @@ class OginiEngineTest extends TestCase
 
         $this->mockClient->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::on(function ($query) {
-                return $query['sort'] === 'created_at:desc,title:asc';
-            }), null, null)
+            ->with('test_index', 'test', Mockery::on(function ($options) {
+                return isset($options['sort']) && $options['sort'] === 'created_at:desc,title:asc';
+            }))
             ->andReturn(['data' => ['hits' => []]]);
 
         $result = $this->engine->search($builder);

@@ -57,7 +57,7 @@ class AsyncIndexJob implements ShouldQueue
             if ($this->isBulk) {
                 $result = $client->bulkIndexDocuments($this->indexName, $this->document);
             } else {
-                $result = $client->indexDocument($this->indexName, $this->document, $this->documentId);
+                $result = $client->indexDocument($this->indexName, $this->documentId, $this->document);
             }
 
             Event::dispatch(new IndexingCompleted([

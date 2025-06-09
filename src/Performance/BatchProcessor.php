@@ -203,8 +203,8 @@ class BatchProcessor
                     try {
                         $this->client->indexDocument(
                             $indexName,
-                            $document['document'],
-                            $document['id']
+                            $document['id'],
+                            $document['document']
                         );
                         $processed++;
                         break;

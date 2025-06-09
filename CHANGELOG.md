@@ -19,7 +19,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Caching System**: Efficient API usage with configurable TTL
 - **Distribution Documentation**: Complete Packagist and release guides
 
-## [1.0.0] - TBD
+## [1.0.1] - TBD
+
+### Fixed
+- **CRITICAL: Laravel Scout Method Signature Compatibility** - Fixed incorrect method signatures that were preventing proper Scout integration
+  - Fixed `indexDocument()` parameter order: now `indexDocument(indexName, documentId, document)` 
+  - Fixed `search()` method signature: now `search(indexName, query_string, options[])`
+  - Updated all internal method calls in `OginiEngine`, `AsyncIndexJob`, `BatchProcessor`
+  - Fixed health check search calls
+  - Updated all corresponding unit tests
+  - **Impact**: Resolves all indexing failures, search returning 0 results, and bulk operation issues
+
+### Breaking Changes
+- Direct calls to `OginiClient::indexDocument()` must swap parameter order
+- Direct calls to `OginiClient::search()` must use new signature
+- **Laravel Scout Integration**: No migration needed - fixes make package properly compatible
+
+## [1.0.0] - 2025-06-06
 
 ### Added
 - Initial release of Ogini Laravel Scout Driver

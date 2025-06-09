@@ -128,8 +128,8 @@ class OginiEngine extends Engine
             foreach ($models as $model) {
                 $this->client->indexDocument(
                     $indexName,
-                    $model->toSearchableArray(),
-                    $model->getScoutKey()
+                    $model->getScoutKey(),
+                    $model->toSearchableArray()
                 );
             }
         }
@@ -374,12 +374,11 @@ class OginiEngine extends Engine
                 $indexName,
                 $searchQuery,
                 $options,
-                function () use ($indexName, $searchQuery, $options) {
+                function () use ($indexName, $searchQuery, $options, $builder) {
                     return $this->client->search(
                         $indexName,
-                        $searchQuery,
-                        $options['size'] ?? null,
-                        $options['from'] ?? null
+                        $builder->query ?? '',
+                        array_merge($searchQuery, $options)
                     );
                 }
             );
@@ -387,9 +386,8 @@ class OginiEngine extends Engine
 
         return $this->client->search(
             $indexName,
-            $searchQuery,
-            $options['size'] ?? null,
-            $options['from'] ?? null
+            $builder->query ?? '',
+            array_merge($searchQuery, $options)
         );
     }
 
@@ -524,9 +522,11 @@ class OginiEngine extends Engine
 
         return $this->client->search(
             $indexName,
-            $searchQuery,
-            $options['size'] ?? $builder->limit,
-            $options['from'] ?? 0
+            $builder->query ?? '',
+            array_merge($searchQuery, [
+                'size' => $options['size'] ?? $builder->limit,
+                'from' => $options['from'] ?? 0
+            ])
         );
     }
 
@@ -603,9 +603,11 @@ class OginiEngine extends Engine
 
         return $this->client->search(
             $indexName,
-            $searchQuery,
-            $options['size'] ?? $builder->limit,
-            $options['from'] ?? 0
+            $builder->query ?? '',
+            array_merge($searchQuery, [
+                'size' => $options['size'] ?? $builder->limit,
+                'from' => $options['from'] ?? 0
+            ])
         );
     }
 
@@ -722,5 +724,26 @@ class OginiEngine extends Engine
         $highlightCallback($highlighting);
 
         return $this->advancedSearch($builder, null, null, $highlighting, [], $options);
+    }
+
+    /**
+     * Perform a health check on the search engine.
+     *
+     * @param bool $detailed Whether to perform detailed health checks
+     * @return array Health check results
+     */
+    public function healthCheck(bool $detailed = false): array
+    {
+        return $this->client->healthCheck($detailed);
+    }
+
+    /**
+     * Quick health check to determine if the search engine is accessible.
+     *
+     * @return bool True if the engine is healthy and accessible
+     */
+    public function isHealthy(): bool
+    {
+        return $this->client->isHealthy();
     }
 }

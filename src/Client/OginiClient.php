@@ -144,17 +144,17 @@ class OginiClient
      * Index a document.
      *
      * @param string $indexName The index to store the document in
+     * @param string $documentId The document ID
      * @param array $document Document data
-     * @param string|null $documentId Optional document ID
      * @return array Response data
      * @throws OginiException
      */
-    public function indexDocument(string $indexName, array $document, ?string $documentId = null): array
+    public function indexDocument(string $indexName, string $documentId, array $document): array
     {
-        $payload = ['document' => $document];
-        if ($documentId !== null) {
-            $payload['id'] = $documentId;
-        }
+        $payload = [
+            'id' => $documentId,
+            'document' => $document
+        ];
         return $this->request('POST', "/api/indices/{$indexName}/documents", $payload);
     }
 
@@ -253,21 +253,50 @@ class OginiClient
      * Search for documents.
      *
      * @param string $indexName The index to search in
-     * @param array $searchQuery Search query parameters
-     * @param int|null $size Number of results to return
-     * @param int|null $from Starting offset
+     * @param string $query Search query string
+     * @param array $options Search options (size, from, filters, etc.)
      * @return array Search results
      * @throws OginiException
      */
-    public function search(string $indexName, array $searchQuery, ?int $size = null, ?int $from = null): array
+    public function search(string $indexName, string $query, array $options = []): array
     {
-        $payload = $searchQuery;
-        if ($size !== null) {
-            $payload['size'] = $size;
+        // Build the search payload
+        if (empty($query)) {
+            $payload = [
+                'query' => ['match_all' => []]
+            ];
+        } else {
+            $payload = [
+                'query' => [
+                    'match' => [
+                        'value' => $query
+                    ]
+                ]
+            ];
         }
-        if ($from !== null) {
-            $payload['from'] = $from;
+
+        // Add size if provided
+        if (isset($options['size'])) {
+            $payload['size'] = $options['size'];
         }
+
+        // Add from (offset) if provided
+        if (isset($options['from'])) {
+            $payload['from'] = $options['from'];
+        }
+
+        // Add other options (filters, sort, etc.) but preserve query structure
+        foreach ($options as $key => $value) {
+            if (!in_array($key, ['size', 'from']) && $key !== 'query') {
+                $payload[$key] = $value;
+            }
+        }
+
+        // Allow options to override query if specifically provided
+        if (isset($options['query'])) {
+            $payload['query'] = $options['query'];
+        }
+
         return $this->request('POST', "/api/indices/{$indexName}/_search", $payload);
     }
 
@@ -680,5 +709,159 @@ class OginiClient
     {
         $payload = ['language' => $language ?? 'en'];
         return $this->request('DELETE', "/api/indices/{$indexName}/stopwords", $payload);
+    }
+
+    /**
+     * Perform a basic health check on the OginiSearch API.
+     * 
+     * This method tests connectivity, authentication, and basic API functionality.
+     *
+     * @param bool $detailed Whether to perform detailed health checks
+     * @return array Health check results
+     * @throws OginiException
+     */
+    public function healthCheck(bool $detailed = false): array
+    {
+        $healthData = [
+            'status' => 'unknown',
+            'api_accessible' => false,
+            'authenticated' => false,
+            'response_time_ms' => null,
+            'version' => null,
+            'timestamp' => now()->toISOString(),
+            'details' => [],
+        ];
+
+        $startTime = microtime(true);
+
+        try {
+            // Basic connectivity test - try to get server status/info
+            $response = $this->request('GET', '/api/health');
+
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            $healthData['response_time_ms'] = $responseTime;
+            $healthData['api_accessible'] = true;
+
+            // Check if we got a valid response
+            if (isset($response['status'])) {
+                $healthData['status'] = $response['status'];
+                $healthData['authenticated'] = true;
+
+                if (isset($response['version'])) {
+                    $healthData['version'] = $response['version'];
+                }
+
+                // Add server details if available
+                if (isset($response['server_info'])) {
+                    $healthData['details']['server'] = $response['server_info'];
+                }
+            }
+
+            // Perform detailed checks if requested
+            if ($detailed) {
+                $healthData['details'] = array_merge($healthData['details'], $this->performDetailedHealthChecks());
+            }
+        } catch (OginiException $e) {
+            $healthData['response_time_ms'] = round((microtime(true) - $startTime) * 1000, 2);
+
+            // Check if this is a connection error (wrapped ConnectException)
+            $previous = $e->getPrevious();
+            if ($previous instanceof ConnectException) {
+                $healthData['status'] = 'unreachable';
+                $healthData['details']['error'] = 'Cannot connect to OginiSearch API';
+                $healthData['details']['message'] = $e->getMessage();
+            } elseif ($e->getCode() === 401) {
+                // Authentication failed
+                $healthData['api_accessible'] = true;
+                $healthData['status'] = 'authentication_failed';
+                $healthData['details']['error'] = 'Invalid API key or authentication failed';
+            } elseif ($e->getCode() >= 500) {
+                // Server error
+                $healthData['api_accessible'] = true;
+                $healthData['status'] = 'server_error';
+                $healthData['details']['error'] = 'Server error: ' . $e->getMessage();
+            } elseif ($e->getCode() >= 400) {
+                // Client error
+                $healthData['api_accessible'] = true;
+                $healthData['status'] = 'client_error';
+                $healthData['details']['error'] = 'Client error: ' . $e->getMessage();
+            } else {
+                // General error
+                $healthData['status'] = 'error';
+                $healthData['details']['error'] = $e->getMessage();
+            }
+        } catch (\Exception $e) {
+            $healthData['status'] = 'error';
+            $healthData['details']['error'] = 'Unexpected error: ' . $e->getMessage();
+            $healthData['response_time_ms'] = round((microtime(true) - $startTime) * 1000, 2);
+        }
+
+        return $healthData;
+    }
+
+    /**
+     * Perform detailed health checks.
+     *
+     * @return array Detailed health check results
+     */
+    protected function performDetailedHealthChecks(): array
+    {
+        $details = [];
+
+        try {
+            // Test index listing
+            $listStart = microtime(true);
+            $indices = $this->listIndices();
+            $details['index_listing'] = [
+                'accessible' => true,
+                'response_time_ms' => round((microtime(true) - $listStart) * 1000, 2),
+                'index_count' => count($indices['data'] ?? []),
+            ];
+        } catch (\Exception $e) {
+            $details['index_listing'] = [
+                'accessible' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+
+        // Test search functionality with a simple test
+        try {
+            $searchStart = microtime(true);
+            // Try a basic search on any available index
+            $searchResults = $this->search('*', '', ['query' => ['match_all' => []], 'size' => 1]);
+            $details['search_functionality'] = [
+                'accessible' => true,
+                'response_time_ms' => round((microtime(true) - $searchStart) * 1000, 2),
+            ];
+        } catch (\Exception $e) {
+            $details['search_functionality'] = [
+                'accessible' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+
+        // Add configuration details
+        $details['configuration'] = [
+            'base_url' => $this->baseUrl,
+            'timeout' => $this->config['timeout'],
+            'retry_attempts' => $this->config['retry_attempts'],
+        ];
+
+        return $details;
+    }
+
+    /**
+     * Quick health check - simplified version for frequent monitoring.
+     *
+     * @return bool True if the API is accessible and authenticated
+     */
+    public function isHealthy(): bool
+    {
+        try {
+            $health = $this->healthCheck(false);
+            return $health['api_accessible'] && $health['authenticated'] && $health['status'] !== 'error';
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }
