@@ -3,7 +3,7 @@
   "description": "OginiSearch Laravel Scout driver with PHP client - High-performance search engine integration",
   "type": "library",
   "license": "MIT",
-  "version": "\u001b[0;34mℹ️  Current version: 1.0.0\u001b[0m\n1.0.1",
+  "version": "1.0.0",
   "keywords": [
     "laravel",
     "scout",
