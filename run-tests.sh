@@ -64,7 +64,7 @@ show_usage() {
 case "${1:-ci-safe}" in
     "ci-safe"|"ci"|"safe")
         print_info "Running CI-safe tests (excludes real API calls)..."
-        vendor/bin/phpunit --configuration=phpunit.ci.xml --testsuite=CI-Safe --testdox
+        vendor/bin/phpunit --testsuite=Unit --exclude-group=quality-assurance,benchmarks,load-tests,error-conditions,integration-tests,real-api-calls --testdox
         print_success "CI-safe tests completed"
         ;;
     

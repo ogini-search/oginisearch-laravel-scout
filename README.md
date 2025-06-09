@@ -439,8 +439,8 @@ The package includes comprehensive testing with enterprise-grade quality assuran
 
 # Or use composer/phpunit directly:
 composer test                                              # CI-safe tests
+vendor/bin/phpunit --exclude-group=quality-assurance,benchmarks,load-tests,error-conditions,integration-tests,real-api-calls       # CI-safe tests (manual)
 vendor/bin/phpunit --group=real-api-calls                 # Real API call tests
-vendor/bin/phpunit --configuration=phpunit.ci.xml --testsuite=CI-Safe  # CI config
 ```
 
 #### Running Tests with Real API Calls
