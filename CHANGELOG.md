@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Caching System**: Efficient API usage with configurable TTL
 - **Distribution Documentation**: Complete Packagist and release guides
 
-## [1.0.1] - TBD
+## [1.0.2] - 2025-06-09
 
 ### Fixed
 - **CRITICAL: Laravel Scout Method Signature Compatibility** - Fixed incorrect method signatures that were preventing proper Scout integration
