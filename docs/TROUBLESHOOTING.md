@@ -161,7 +161,7 @@ This command will check:
 3. **Test Authentication:**
    ```bash
    curl -H "Authorization: Bearer your-api-key" \
-        http://your-server:3000/api/health
+        http://your-server:3000/health
    ```
 
 ## Search Issues

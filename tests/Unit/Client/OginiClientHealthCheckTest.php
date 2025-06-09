@@ -55,7 +55,7 @@ class OginiClientHealthCheckTest extends TestCase
     public function it_handles_connection_errors_in_health_check()
     {
         $mock = new MockHandler([
-            new ConnectException('Connection refused', new Request('GET', '/api/health'))
+            new ConnectException('Connection refused', new Request('GET', '/health'))
         ]);
         $handlerStack = HandlerStack::create($mock);
         $httpClient = new Client(['handler' => $handlerStack]);
@@ -74,7 +74,7 @@ class OginiClientHealthCheckTest extends TestCase
     public function it_handles_authentication_errors_in_health_check()
     {
         $response = new Response(401, [], '{"error": "Unauthorized"}');
-        $exception = new ClientException('Unauthorized', new Request('GET', '/api/health'), $response);
+        $exception = new ClientException('Unauthorized', new Request('GET', '/health'), $response);
 
         $mock = new MockHandler([$exception]);
         $handlerStack = HandlerStack::create($mock);
@@ -94,7 +94,7 @@ class OginiClientHealthCheckTest extends TestCase
     public function it_handles_server_errors_in_health_check()
     {
         $response = new Response(500, [], '{"error": "Internal Server Error"}');
-        $exception = new ServerException('Server Error', new Request('GET', '/api/health'), $response);
+        $exception = new ServerException('Server Error', new Request('GET', '/health'), $response);
 
         $mock = new MockHandler([$exception]);
         $handlerStack = HandlerStack::create($mock);
@@ -177,7 +177,7 @@ class OginiClientHealthCheckTest extends TestCase
     public function is_healthy_returns_false_for_unhealthy_api()
     {
         $mock = new MockHandler([
-            new ConnectException('Connection refused', new Request('GET', '/api/health'))
+            new ConnectException('Connection refused', new Request('GET', '/health'))
         ]);
         $handlerStack = HandlerStack::create($mock);
         $httpClient = new Client(['handler' => $handlerStack]);

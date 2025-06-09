@@ -516,7 +516,7 @@ Congratulations! You now have a working OginiSearch setup. Here's what to explor
 #### Connection Errors
 ```bash
 # Check if OginiSearch server is running
-curl http://localhost:3000/api/health
+curl http://localhost:3000/health
 
 # Check Laravel configuration
 php artisan config:cache

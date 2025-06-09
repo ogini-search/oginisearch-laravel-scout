@@ -736,7 +736,7 @@ class OginiClient
 
         try {
             // Basic connectivity test - try to get server status/info
-            $response = $this->request('GET', '/api/health');
+            $response = $this->request('GET', '/health');
 
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
             $healthData['response_time_ms'] = $responseTime;
