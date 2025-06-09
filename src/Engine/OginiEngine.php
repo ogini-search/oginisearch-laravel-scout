@@ -116,7 +116,7 @@ class OginiEngine extends Engine
         $documents = [];
         foreach ($models as $model) {
             $documents[] = [
-                'id' => $model->getScoutKey(),
+                'id' => (string)$model->getScoutKey(),
                 'document' => $model->toSearchableArray(),
             ];
         }
@@ -128,7 +128,7 @@ class OginiEngine extends Engine
             foreach ($models as $model) {
                 $this->client->indexDocument(
                     $indexName,
-                    $model->getScoutKey(),
+                    (string)$model->getScoutKey(),
                     $model->toSearchableArray()
                 );
             }

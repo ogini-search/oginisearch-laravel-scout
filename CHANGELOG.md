@@ -19,6 +19,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Caching System**: Efficient API usage with configurable TTL
 - **Distribution Documentation**: Complete Packagist and release guides
 
+## [1.0.3] - 2025-06-09
+
+### Added
+- **Scout Import Verification**: Comprehensive integration tests for `scout:import` functionality
+- **Parameter Order Validation**: Tests confirming correct method signature usage
+
+### Fixed
+- **Verified Scout Integration**: Confirmed that parameter order issues mentioned in community reports have been resolved
+  - `indexDocument()` calls use correct order: `indexDocument(indexName, documentId, document)`
+  - `bulkIndexDocuments()` uses proper document format with 'id' and 'document' keys
+  - `search()` method signature correctly implemented: `search(indexName, query, options)`
+  - All fallback paths in `OginiEngine::update()` work correctly
+- **Enhanced Test Coverage**: Added `ScoutImportTest` with 5 comprehensive tests covering scout:import scenarios
+
+### Verified
+- **Scout Import Command**: `php artisan scout:import` now verified to work correctly
+- **Bulk Indexing**: Bulk operations and individual fallback indexing both functional
+- **Search Functionality**: Query processing and result mapping working as expected
+- **Error Handling**: Graceful fallback from bulk to individual indexing on failures
+
 ## [1.0.2] - 2025-06-09
 
 ### Fixed
