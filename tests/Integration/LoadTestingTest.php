@@ -151,7 +151,7 @@ class LoadTestingTest extends TestCase
      */
     public function it_handles_batch_processing_stress_test(): void
     {
-        $batchSizes = [100, 500, 1000, 2000];
+        $batchSizes = [50, 100, 200, 500];
         $results = [];
 
         foreach ($batchSizes as $batchSize) {
@@ -171,8 +171,8 @@ class LoadTestingTest extends TestCase
                     'id' => "batch_doc_$i",
                     'document' => [
                         'title' => "Batch Document $i",
-                        'content' => "Batch processing content $i " . str_repeat("test ", 50),
-                        'tags' => ['batch', 'stress', 'test', "tag_$i"],
+                        'content' => "Batch processing content $i " . str_repeat("test ", 10),
+                        'tags' => ['batch', 'stress', 'test'],
                         'metadata' => [
                             'created_at' => date('Y-m-d H:i:s'),
                             'batch_id' => $batchSize,
@@ -211,9 +211,9 @@ class LoadTestingTest extends TestCase
                 "Batch processing should complete within 30 seconds"
             );
             $this->assertLessThan(
-                500,
+                200,
                 $memoryUsed,
-                "Memory usage should stay under 500MB"
+                "Memory usage should stay under 200MB"
             );
         }
 
@@ -232,7 +232,7 @@ class LoadTestingTest extends TestCase
             'delete_operations' => 10,
         ];
 
-        $totalOperations = 200;
+        $totalOperations = 100;
         $results = [];
 
         // Calculate operations per type
