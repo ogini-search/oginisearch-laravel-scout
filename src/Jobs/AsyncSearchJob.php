@@ -54,7 +54,16 @@ class AsyncSearchJob implements ShouldQueue
     public function handle(OginiClient $client): void
     {
         try {
-            $result = $client->search($this->indexName, $this->searchQuery, $this->size, $this->from);
+            // Build options array for the search call
+            $options = [];
+            if ($this->size !== null) {
+                $options['size'] = $this->size;
+            }
+            if ($this->from !== null) {
+                $options['from'] = $this->from;
+            }
+
+            $result = $client->search($this->indexName, '', array_merge($this->searchQuery, $options));
 
             Event::dispatch(new SearchCompleted([
                 'job_id' => $this->jobId,

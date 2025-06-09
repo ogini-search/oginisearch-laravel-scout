@@ -8,6 +8,7 @@ use Laravel\Scout\Builder;
 
 /**
  * @group integration-tests
+ * @group real-api-calls
  */
 class OginiSearchableTraitTest extends IntegrationTestCase
 {

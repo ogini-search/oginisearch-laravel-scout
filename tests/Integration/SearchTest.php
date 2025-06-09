@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * @group integration-tests
+ * @group real-api-calls
  */
 class SearchTest extends IntegrationTestCase
 {

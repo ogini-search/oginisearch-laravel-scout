@@ -377,7 +377,7 @@ class OginiEngine extends Engine
                 function () use ($indexName, $searchQuery, $options, $builder) {
                     return $this->client->search(
                         $indexName,
-                        $builder->query ?? '',
+                        $builder->query ?: '',
                         array_merge($searchQuery, $options)
                     );
                 }
@@ -386,7 +386,7 @@ class OginiEngine extends Engine
 
         return $this->client->search(
             $indexName,
-            $builder->query ?? '',
+            $builder->query ?: '',
             array_merge($searchQuery, $options)
         );
     }
@@ -522,7 +522,7 @@ class OginiEngine extends Engine
 
         return $this->client->search(
             $indexName,
-            $builder->query ?? '',
+            $builder->query ?: '',
             array_merge($searchQuery, [
                 'size' => $options['size'] ?? $builder->limit,
                 'from' => $options['from'] ?? 0
@@ -603,7 +603,7 @@ class OginiEngine extends Engine
 
         return $this->client->search(
             $indexName,
-            $builder->query ?? '',
+            $builder->query ?: '',
             array_merge($searchQuery, [
                 'size' => $options['size'] ?? $builder->limit,
                 'from' => $options['from'] ?? 0
