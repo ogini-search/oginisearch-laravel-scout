@@ -139,7 +139,7 @@ class EdgeCaseTest extends TestCase
 
         $client->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::any(), null, 0)
+            ->with('test_index', 'test', Mockery::any())
             ->andThrow(ConnectionException::timeout('http://localhost:3000', 30));
 
         $this->expectException(ConnectionException::class);
@@ -170,7 +170,7 @@ class EdgeCaseTest extends TestCase
         // Test rate limit with zero remaining requests
         $client->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::any(), null, 0)
+            ->with('test_index', 'test', Mockery::any())
             ->andThrow(RateLimitException::forSearch(60));
 
         $this->expectException(RateLimitException::class);
@@ -201,7 +201,7 @@ class EdgeCaseTest extends TestCase
         // Test malformed search response
         $client->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::any(), null, 0)
+            ->with('test_index', 'test', Mockery::any())
             ->andReturn([
                 'hits' => 'invalid_format', // Should be array
                 'total' => 'not_a_number',  // Should be integer
@@ -273,7 +273,7 @@ class EdgeCaseTest extends TestCase
 
         $client->shouldReceive('search')
             ->once()
-            ->with('test_index', Mockery::any(), null, 0)
+            ->with('test_index', 'test', Mockery::any())
             ->andThrow($chainedException);
 
         try {
@@ -319,7 +319,7 @@ class EdgeCaseTest extends TestCase
         // The engine will fallback to indexDocument when bulk fails
         $client->shouldReceive('indexDocument')
             ->once()
-            ->with('test_index', $edgeCaseDocument, '')
+            ->with('test_index', '', $edgeCaseDocument)
             ->andThrow(new ValidationException(
                 'Validation failed',
                 ['id' => 'ID cannot be empty'],

@@ -117,13 +117,13 @@ class BatchProcessorTest extends TestCase
 
         // First individual indexing succeeds
         $this->mockClient->shouldReceive('indexDocument')
-            ->with('test_index', Mockery::any(), 1)
+            ->with('test_index', 1, Mockery::any())
             ->once()
             ->andReturn(['success' => true]);
 
         // Second individual indexing fails after retries
         $this->mockClient->shouldReceive('indexDocument')
-            ->with('test_index', Mockery::any(), 2)
+            ->with('test_index', 2, Mockery::any())
             ->times(2) // max_retry_attempts
             ->andThrow(new OginiException('Individual indexing failed'));
 

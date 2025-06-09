@@ -63,7 +63,7 @@ class LoadTestingTest extends TestCase
             // Simulate concurrent requests (sequential execution for test purposes)
             $responses = [];
             for ($i = 0; $i < $concurrency; $i++) {
-                $responses[] = $this->client->search($this->testIndex, $query, 10, 0);
+                $responses[] = $this->client->search($this->testIndex, 'concurrent test', array_merge($query, ['size' => 10, 'from' => 0]));
             }
 
             $end = microtime(true);
@@ -122,7 +122,7 @@ class LoadTestingTest extends TestCase
                     'content' => "Content for concurrent indexing test $i",
                     'timestamp' => date('Y-m-d H:i:s'),
                 ];
-                $indexingResults[] = $this->client->indexDocument($this->testIndex, $document, "doc_$i");
+                $indexingResults[] = $this->client->indexDocument($this->testIndex, "doc_$i", $document);
             }
 
             $end = microtime(true);
@@ -270,13 +270,13 @@ class LoadTestingTest extends TestCase
         // Execute search operations
         for ($i = 0; $i < $searchOps; $i++) {
             $query = ['query' => ['match' => ['title' => "search term $i"]]];
-            $operations[] = ['type' => 'search', 'result' => $this->client->search($this->testIndex, $query)];
+            $operations[] = ['type' => 'search', 'result' => $this->client->search($this->testIndex, "search term $i", $query)];
         }
 
         // Execute index operations
         for ($i = 0; $i < $indexOps; $i++) {
             $document = ['title' => "Mixed workload doc $i", 'content' => "Content $i"];
-            $operations[] = ['type' => 'index', 'result' => $this->client->indexDocument($this->testIndex, $document)];
+            $operations[] = ['type' => 'index', 'result' => $this->client->indexDocument($this->testIndex, "mixed_doc_$i", $document)];
         }
 
         // Execute delete operations
@@ -340,7 +340,7 @@ class LoadTestingTest extends TestCase
 
             try {
                 $query = ['query' => ['match' => ['title' => "sustained load $i"]]];
-                $result = $this->client->search($this->testIndex, $query);
+                $result = $this->client->search($this->testIndex, "sustained load $i", $query);
 
                 $requestEnd = microtime(true);
                 $responseTimes[] = ($requestEnd - $requestStart) * 1000;
@@ -409,7 +409,7 @@ class LoadTestingTest extends TestCase
         $normalResponses = [];
         for ($i = 0; $i < $normalLoad; $i++) {
             $query = ['query' => ['match' => ['title' => "normal load $i"]]];
-            $normalResponses[] = $this->client->search($this->testIndex, $query);
+            $normalResponses[] = $this->client->search($this->testIndex, "normal load $i", $query);
         }
         $normalEnd = microtime(true);
 
@@ -428,7 +428,7 @@ class LoadTestingTest extends TestCase
         $spikeResponses = [];
         for ($i = 0; $i < $spikeLoad; $i++) {
             $query = ['query' => ['match' => ['title' => "spike load $i"]]];
-            $spikeResponses[] = $this->client->search($this->testIndex, $query);
+            $spikeResponses[] = $this->client->search($this->testIndex, "spike load $i", $query);
         }
         $spikeEnd = microtime(true);
 

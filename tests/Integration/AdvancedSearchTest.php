@@ -95,7 +95,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $facetedQuery, 20, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($facetedQuery, ["size" => 20, "from" => 0]));
 
         $this->assertEquals(35, $result['total']);
         $this->assertCount(2, $result['hits']);
@@ -144,7 +144,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $complexQuery, 10, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($complexQuery, ["size" => 10, "from" => 0]));
 
         $this->assertEquals(12, $result['total']);
         $this->assertCount(2, $result['hits']);
@@ -210,7 +210,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $highlightQuery, 10, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($highlightQuery, ["size" => 10, "from" => 0]));
 
         $this->assertEquals(25, $result['total']);
         $this->assertCount(2, $result['hits']);
@@ -257,7 +257,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $sortQuery, 10, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($sortQuery, ["size" => 10, "from" => 0]));
 
         $this->assertEquals(3, $result['total']);
         $this->assertCount(3, $result['hits']);
@@ -325,7 +325,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $geoQuery, 10, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($geoQuery, ["size" => 10, "from" => 0]));
 
         $this->assertEquals(8, $result['total']);
         $this->assertCount(2, $result['hits']);
@@ -381,7 +381,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $nestedQuery, 10, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($nestedQuery, ["size" => 10, "from" => 0]));
 
         $this->assertEquals(1, $result['total']);
         $this->assertCount(1, $result['hits']);
@@ -427,7 +427,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $boostedQuery, 10, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($boostedQuery, ["size" => 10, "from" => 0]));
 
         $this->assertEquals(25, $result['total']);
         $this->assertCount(2, $result['hits']);
@@ -496,7 +496,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $functionScoreQuery, 10, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($functionScoreQuery, ["size" => 10, "from" => 0]));
 
         $this->assertEquals(15, $result['total']);
         $this->assertCount(2, $result['hits']);
@@ -534,7 +534,7 @@ class AdvancedSearchTest extends TestCase
             ]
         ];
 
-        $result = $this->client->search($this->testIndex, $customScoringQuery, 10, 0);
+        $result = $this->client->search($this->testIndex, "", array_merge($customScoringQuery, ["size" => 10, "from" => 0]));
 
         $this->assertEquals(10, $result['total']);
         $this->assertCount(1, $result['hits']);

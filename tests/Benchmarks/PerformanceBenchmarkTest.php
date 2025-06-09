@@ -67,7 +67,7 @@ class PerformanceBenchmarkTest extends TestCase
 
         for ($i = 0; $i < $iterations; $i++) {
             $start = microtime(true);
-            $result = $this->client->indexDocument($this->testIndex, $document, "doc_$i");
+            $result = $this->client->indexDocument($this->testIndex, "doc_$i", $document);
             $end = microtime(true);
 
             $times[] = ($end - $start) * 1000; // Convert to milliseconds
@@ -203,7 +203,7 @@ class PerformanceBenchmarkTest extends TestCase
                 $this->mockHandler->append(new Response(200, [], json_encode($expectedResponse)));
 
                 $start = microtime(true);
-                $result = $this->client->search($this->testIndex, $query, 20, 0);
+                $result = $this->client->search($this->testIndex, "search test", array_merge($query, ["size" => 20, "from" => 0]));
                 $end = microtime(true);
 
                 $times[] = ($end - $start) * 1000;
@@ -375,7 +375,7 @@ class PerformanceBenchmarkTest extends TestCase
 
                 $start = microtime(true);
                 $size = $strategy === 'with_limited_results' ? 5 : 20;
-                $result = $this->client->search($this->testIndex, $query, $size, 0);
+                $result = $this->client->search($this->testIndex, "optimization test", array_merge($query, ["size" => $size, "from" => 0]));
                 $end = microtime(true);
 
                 $times[] = ($end - $start) * 1000;
@@ -419,7 +419,7 @@ class PerformanceBenchmarkTest extends TestCase
         ])));
 
         $start = microtime(true);
-        $result1 = $this->client->search($this->testIndex, $cacheableQuery, 10, 0);
+        $result1 = $this->client->search($this->testIndex, "cache test", array_merge($cacheableQuery, ["size" => 10, "from" => 0]));
         $end = microtime(true);
         $firstRequestTime = ($end - $start) * 1000;
 
@@ -433,7 +433,7 @@ class PerformanceBenchmarkTest extends TestCase
             ])));
 
             $start = microtime(true);
-            $result = $this->client->search($this->testIndex, $cacheableQuery, 10, 0);
+            $result = $this->client->search($this->testIndex, "cache test", array_merge($cacheableQuery, ["size" => 10, "from" => 0]));
             $end = microtime(true);
             $cachedTimes[] = ($end - $start) * 1000;
         }
@@ -474,7 +474,7 @@ class PerformanceBenchmarkTest extends TestCase
             $documentSize = strlen(json_encode($document));
 
             $start = microtime(true);
-            $result = $this->client->indexDocument($this->testIndex, $document, $size);
+            $result = $this->client->indexDocument($this->testIndex, $size, $document);
             $end = microtime(true);
 
             $time = ($end - $start) * 1000;

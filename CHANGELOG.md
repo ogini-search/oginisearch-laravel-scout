@@ -27,8 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed `search()` method signature: now `search(indexName, query_string, options[])`
   - Updated all internal method calls in `OginiEngine`, `AsyncIndexJob`, `BatchProcessor`
   - Fixed health check search calls
-  - Updated all corresponding unit tests
+  - Updated all corresponding unit tests, integration tests, and benchmark tests
   - **Impact**: Resolves all indexing failures, search returning 0 results, and bulk operation issues
+  - **GitHub Workflows**: All CI tests now pass (497 tests, 1671 assertions)
 
 ### Breaking Changes
 - Direct calls to `OginiClient::indexDocument()` must swap parameter order

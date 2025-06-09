@@ -99,7 +99,7 @@ class ErrorConditionTest extends IntegrationTestCase
         $client->setHttpClient($mockClient);
 
         try {
-            $client->indexDocument('test_index', ['title' => 'test']);
+            $client->indexDocument('test_index', 'test-doc-1', ['title' => 'test']);
             $this->fail('Expected timeout exception');
         } catch (\Exception $e) {
             // Should handle timeout gracefully
@@ -128,7 +128,7 @@ class ErrorConditionTest extends IntegrationTestCase
         $client->setHttpClient($mockClient);
 
         try {
-            $client->indexDocument('test_index', ['title' => 'test']);
+            $client->indexDocument('test_index', 'test-doc', ['title' => 'test']);
             $this->fail('Expected connection exception');
         } catch (\Exception $e) {
             // Should handle server unavailable gracefully
@@ -284,7 +284,7 @@ class ErrorConditionTest extends IntegrationTestCase
         $client->setHttpClient($mockClient);
 
         try {
-            $result = $client->indexDocument('test_index', ['title' => 'test']);
+            $result = $client->indexDocument('test_index', 'test-doc', ['title' => 'test']);
             $this->assertArrayHasKey('success', $result);
             $this->assertTrue($result['success']);
         } catch (\Exception $e) {
@@ -308,7 +308,7 @@ class ErrorConditionTest extends IntegrationTestCase
         $client->setHttpClient($mockClient);
 
         try {
-            $client->indexDocument('test_index', ['title' => 'test']);
+            $client->indexDocument('test_index', 'test-doc', ['title' => 'test']);
             $this->fail('Expected exception for malformed response');
         } catch (\Exception $e) {
             $this->assertInstanceOf(\Exception::class, $e);
@@ -358,7 +358,7 @@ class ErrorConditionTest extends IntegrationTestCase
         $client->setHttpClient($mockClient);
 
         try {
-            $client->indexDocument('test_index', ['title' => 'test']);
+            $client->indexDocument('test_index', 'test-doc', ['title' => 'test']);
             $this->fail('Expected network exception');
         } catch (\Exception $e) {
             // Should handle network issues gracefully
@@ -389,7 +389,7 @@ class ErrorConditionTest extends IntegrationTestCase
         $client->setHttpClient($mockClient);
 
         try {
-            $result = $client->indexDocument('test_index', ['title' => 'test']);
+            $result = $client->indexDocument('test_index', 'test-doc', ['title' => 'test']);
 
             // Should succeed after retries
             $this->assertArrayHasKey('success', $result);
@@ -416,7 +416,7 @@ class ErrorConditionTest extends IntegrationTestCase
         $client->setHttpClient($mockClient);
 
         try {
-            $client->indexDocument('test_index', ['title' => 'test']);
+            $client->indexDocument('test_index', 'test-doc', ['title' => 'test']);
             $this->fail('Expected authentication error');
         } catch (\Exception $e) {
             // Should handle authentication errors properly
@@ -463,7 +463,7 @@ class ErrorConditionTest extends IntegrationTestCase
         $client->setHttpClient($mockClient);
 
         try {
-            $client->indexDocument('test_index', ['title' => 'test']);
+            $client->indexDocument('test_index', 'test-doc', ['title' => 'test']);
             $this->fail('Expected connection error');
         } catch (\Exception $e) {
             // Verify that the error was caught
