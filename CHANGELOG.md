@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated all corresponding unit tests, integration tests, and benchmark tests
   - **Impact**: Resolves all indexing failures, search returning 0 results, and bulk operation issues
   - **GitHub Workflows**: All CI tests now pass (497 tests, 1671 assertions)
+- **API Endpoint Compliance** - Updated OginiClient to match official Ogini API documentation
+  - Fixed `deleteByQuery()` endpoint: now uses `DELETE /api/indices/{index}/_query` (was POST /_delete_by_query)
+  - Enhanced `updateIndexSettings()` to support both settings and mappings updates
+  - Improved `search()` method to support field-specific queries and advanced options
+  - Added `advancedSearch()` method for complex query structures as per API docs
 
 ### Breaking Changes
 - Direct calls to `OginiClient::indexDocument()` must swap parameter order

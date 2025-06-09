@@ -430,18 +430,35 @@ The package includes comprehensive testing with enterprise-grade quality assuran
 ### Run Tests
 
 ```bash
-# Full test suite
-composer test
+# Using the convenient test runner script
+./run-tests.sh              # CI-safe tests (default)
+./run-tests.sh unit          # Unit tests only
+./run-tests.sh api-calls     # Real API call tests
+./run-tests.sh all           # All tests (CI-safe + API calls if server available)
+./run-tests.sh coverage      # Generate coverage report
 
-# Specific test groups
-composer test -- --filter=Performance
-composer test -- --filter=Security
-composer test -- --filter=EdgeCase
-composer test -- --filter=UpdateChecker
-
-# Code coverage report
-composer test-coverage
+# Or use composer/phpunit directly:
+composer test                                              # CI-safe tests
+vendor/bin/phpunit --group=real-api-calls                 # Real API call tests
+vendor/bin/phpunit --configuration=phpunit.ci.xml --testsuite=CI-Safe  # CI config
 ```
+
+#### Running Tests with Real API Calls
+
+Some integration tests require a real Ogini server running locally. These tests are automatically skipped in CI/CD environments but can be run locally for comprehensive testing:
+
+```bash
+# 1. Start an Ogini server on localhost:3000
+docker run -p 3000:3000 ogini/server
+
+# 2. Run the real API call tests
+vendor/bin/phpunit tests/Integration/DocumentCreationTest.php
+
+# Or run all tests that require real API calls
+vendor/bin/phpunit --group=real-api-calls
+```
+
+**Note**: Tests marked with `@group real-api-calls` are excluded from CI pipelines and `composer test` to ensure fast, reliable automated testing without external dependencies.
 
 ### Quality Assurance
 - **PSR-12 Compliance**: PHP coding standards

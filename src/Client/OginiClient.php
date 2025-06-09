@@ -127,16 +127,28 @@ class OginiClient
     }
 
     /**
-     * Update index settings.
+     * Update index settings and/or mappings.
      *
      * @param string $indexName The name of the index to update
-     * @param array $settings New settings
+     * @param array $settings New settings (optional)
+     * @param array $mappings New mappings (optional)
      * @return array Response data
      * @throws OginiException
      */
-    public function updateIndexSettings(string $indexName, array $settings): array
+    public function updateIndexSettings(string $indexName, array $settings = [], array $mappings = []): array
     {
-        $payload = ['settings' => $settings];
+        $payload = [];
+        if (!empty($settings)) {
+            $payload['settings'] = $settings;
+        }
+        if (!empty($mappings)) {
+            $payload['mappings'] = $mappings;
+        }
+
+        if (empty($payload)) {
+            throw new OginiException('Either settings or mappings must be provided');
+        }
+
         return $this->request('PUT', "/api/indices/{$indexName}/settings", $payload);
     }
 
@@ -224,7 +236,7 @@ class OginiClient
     public function deleteByQuery(string $indexName, array $query): array
     {
         $payload = ['query' => $query];
-        return $this->request('POST', "/api/indices/{$indexName}/documents/_delete_by_query", $payload);
+        return $this->request('DELETE', "/api/indices/{$indexName}/documents/_query", $payload);
     }
 
     /**
@@ -254,25 +266,43 @@ class OginiClient
      *
      * @param string $indexName The index to search in
      * @param string $query Search query string
-     * @param array $options Search options (size, from, filters, etc.)
+     * @param array $options Search options (size, from, filters, query structure, etc.)
      * @return array Search results
      * @throws OginiException
      */
     public function search(string $indexName, string $query, array $options = []): array
     {
-        // Build the search payload
-        if (empty($query)) {
-            $payload = [
-                'query' => ['match_all' => []]
-            ];
+        // If a complete query structure is provided in options, use it
+        if (isset($options['query'])) {
+            $payload = ['query' => $options['query']];
         } else {
-            $payload = [
-                'query' => [
-                    'match' => [
-                        'value' => $query
-                    ]
-                ]
-            ];
+            // Build the search payload based on query string
+            if (empty($query)) {
+                $payload = [
+                    'query' => ['match_all' => []]
+                ];
+            } else {
+                // Support both simple and field-specific queries
+                if (isset($options['field'])) {
+                    $payload = [
+                        'query' => [
+                            'match' => [
+                                'field' => $options['field'],
+                                'value' => $query
+                            ]
+                        ]
+                    ];
+                } else {
+                    // Default to simple match query
+                    $payload = [
+                        'query' => [
+                            'match' => [
+                                'value' => $query
+                            ]
+                        ]
+                    ];
+                }
+            }
         }
 
         // Add size if provided
@@ -285,16 +315,36 @@ class OginiClient
             $payload['from'] = $options['from'];
         }
 
-        // Add other options (filters, sort, etc.) but preserve query structure
-        foreach ($options as $key => $value) {
-            if (!in_array($key, ['size', 'from']) && $key !== 'query') {
-                $payload[$key] = $value;
+        // Add other search options (filters, sort, fields, facets, highlight, etc.)
+        $searchOptions = ['filter', 'sort', 'fields', 'facets', 'highlight'];
+        foreach ($searchOptions as $option) {
+            if (isset($options[$option])) {
+                $payload[$option] = $options[$option];
             }
         }
 
-        // Allow options to override query if specifically provided
-        if (isset($options['query'])) {
-            $payload['query'] = $options['query'];
+        return $this->request('POST', "/api/indices/{$indexName}/_search", $payload);
+    }
+
+    /**
+     * Perform an advanced search with complete query structure.
+     *
+     * @param string $indexName The index to search in
+     * @param array $queryStructure Complete query structure as per API documentation
+     * @param array $options Additional options (size, from, etc.)
+     * @return array Search results
+     * @throws OginiException
+     */
+    public function advancedSearch(string $indexName, array $queryStructure, array $options = []): array
+    {
+        $payload = $queryStructure;
+
+        // Add size and from if provided in options
+        if (isset($options['size'])) {
+            $payload['size'] = $options['size'];
+        }
+        if (isset($options['from'])) {
+            $payload['from'] = $options['from'];
         }
 
         return $this->request('POST', "/api/indices/{$indexName}/_search", $payload);
