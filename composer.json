@@ -1,84 +1,84 @@
 {
-  "name": "ogini/oginisearch-laravel-scout",
-  "description": "OginiSearch Laravel Scout driver with PHP client - High-performance search engine integration",
-  "type": "library",
-  "license": "MIT",
-  "version": "1.0.0",
-  "keywords": [
-    "laravel",
-    "scout",
-    "search",
-    "ogini",
-    "oginisearch",
-    "search-engine",
-    "full-text-search",
-    "indexing",
-    "faceted-search"
-  ],
-  "homepage": "https://github.com/ogini-search/oginisearch-laravel-scout",
-  "support": {
-    "issues": "https://github.com/ogini-search/oginisearch-laravel-scout/issues",
-    "docs": "https://github.com/ogini-search/oginisearch-laravel-scout#readme",
-    "source": "https://github.com/ogini-search/oginisearch-laravel-scout",
-    "email": "support@oginisearch.com"
-  },
-  "authors": [
-    {
-      "name": "Precious Atam",
-      "email": "preciousatam@gmail.com",
-      "homepage": "https://oginisearch.com",
-      "role": "Developer"
+    "name": "ogini/oginisearch-laravel-scout",
+    "description": "OginiSearch Laravel Scout driver with PHP client - High-performance search engine integration",
+    "type": "library",
+    "license": "MIT",
+    "version": "\u001b[0;34m\u2139\ufe0f  Current version: 1.0.0\u001b[0m\n1.0.1",
+    "keywords": [
+        "laravel",
+        "scout",
+        "search",
+        "ogini",
+        "oginisearch",
+        "search-engine",
+        "full-text-search",
+        "indexing",
+        "faceted-search"
+    ],
+    "homepage": "https://github.com/ogini-search/oginisearch-laravel-scout",
+    "support": {
+        "issues": "https://github.com/ogini-search/oginisearch-laravel-scout/issues",
+        "docs": "https://github.com/ogini-search/oginisearch-laravel-scout#readme",
+        "source": "https://github.com/ogini-search/oginisearch-laravel-scout",
+        "email": "support@oginisearch.com"
+    },
+    "authors": [
+        {
+            "name": "Precious Atam",
+            "email": "preciousatam@gmail.com",
+            "homepage": "https://oginisearch.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.0",
+        "laravel/framework": "^10.0|^11.0",
+        "laravel/scout": "^10.0"
+    },
+    "require-dev": {
+        "nunomaduro/larastan": "^2.0",
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "OginiScoutDriver\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "OginiScoutDriver\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage",
+        "analyse": "phpstan analyse --memory-limit=256M --no-progress",
+        "release": "./scripts/release.sh",
+        "release:patch": "./scripts/release.sh patch",
+        "release:minor": "./scripts/release.sh minor",
+        "release:major": "./scripts/release.sh major",
+        "release:prerelease": "./scripts/release.sh prerelease",
+        "check-updates": "php artisan ogini:check-updates",
+        "validate-release": "composer validate && composer test && composer analyse"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "OginiScoutDriver\\OginiServiceProvider"
+            ],
+            "aliases": {
+                "Ogini": "OginiScoutDriver\\Facades\\Ogini",
+                "OginiUpdateChecker": "OginiScoutDriver\\Facades\\UpdateChecker"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "preferred-install": "dist"
     }
-  ],
-  "require": {
-    "php": "^8.2",
-    "guzzlehttp/guzzle": "^7.0",
-    "laravel/framework": "^10.0|^11.0",
-    "laravel/scout": "^10.0"
-  },
-  "require-dev": {
-    "nunomaduro/larastan": "^2.0",
-    "orchestra/testbench": "^8.0|^9.0",
-    "phpunit/phpunit": "^10.0"
-  },
-  "autoload": {
-    "psr-4": {
-      "OginiScoutDriver\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "OginiScoutDriver\\Tests\\": "tests/"
-    }
-  },
-  "scripts": {
-    "test": "phpunit",
-    "test-coverage": "phpunit --coverage-html coverage",
-    "analyse": "phpstan analyse --memory-limit=256M --no-progress",
-    "release": "./scripts/release.sh",
-    "release:patch": "./scripts/release.sh patch",
-    "release:minor": "./scripts/release.sh minor",
-    "release:major": "./scripts/release.sh major",
-    "release:prerelease": "./scripts/release.sh prerelease",
-    "check-updates": "php artisan ogini:check-updates",
-    "validate-release": "composer validate && composer test && composer analyse"
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "OginiScoutDriver\\OginiServiceProvider"
-      ],
-      "aliases": {
-        "Ogini": "OginiScoutDriver\\Facades\\Ogini",
-        "OginiUpdateChecker": "OginiScoutDriver\\Facades\\UpdateChecker"
-      }
-    }
-  },
-  "minimum-stability": "dev",
-  "prefer-stable": true,
-  "config": {
-    "sort-packages": true,
-    "optimize-autoloader": true,
-    "preferred-install": "dist"
-  }
 }
