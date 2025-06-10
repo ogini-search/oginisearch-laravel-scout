@@ -57,7 +57,7 @@ class OginiEngine extends Engine
         $performanceConfig = $this->config['performance'] ?? [];
 
         // Initialize batch processor
-        if (isset($performanceConfig['batch'])) {
+        if (isset($performanceConfig['batch']) && $performanceConfig['batch']['enabled']) {
             $this->batchProcessor = new BatchProcessor($this->client, $performanceConfig['batch']);
         }
 

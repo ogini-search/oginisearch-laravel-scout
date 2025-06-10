@@ -87,7 +87,7 @@ class OginiServiceProvider extends ServiceProvider
             $config = $app['config']['ogini'];
             $engineConfig = array_merge(
                 $config['engine'] ?? [],
-                $config['performance'] ?? []
+                ['performance' => $config['performance'] ?? []]
             );
 
             // Get cache repository if caching is enabled
