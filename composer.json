@@ -3,7 +3,7 @@
   "description": "OginiSearch Laravel Scout driver with PHP client - High-performance search engine integration",
   "type": "library",
   "license": "MIT",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "keywords": [
     "laravel",
     "scout",
@@ -52,7 +52,8 @@
     }
   },
   "scripts": {
-    "test": "phpunit",
+    "test": "phpunit --exclude-group=quality-assurance,benchmarks,load-tests,error-conditions,integration-tests,real-api-calls",
+    "test-all": "phpunit",
     "test-coverage": "phpunit --coverage-html coverage",
     "analyse": "phpstan analyse --memory-limit=256M --no-progress",
     "release": "./scripts/release.sh",

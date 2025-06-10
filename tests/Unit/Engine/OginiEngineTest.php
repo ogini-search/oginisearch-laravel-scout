@@ -49,17 +49,13 @@ class OginiEngineTest extends TestCase
     {
         $models = new Collection([$this->mockModel]);
 
-        $this->mockClient->shouldReceive('bulkIndexDocuments')
+        // The engine calls updateDocument first, then indexDocument if update fails
+        $this->mockClient->shouldReceive('updateDocument')
             ->once()
-            ->with('test_index', [
-                [
-                    'id' => '1',
-                    'document' => [
-                        'title' => 'Test Title',
-                        'content' => 'Test Content',
-                        'status' => 'published'
-                    ]
-                ]
+            ->with('test_index', '1', [
+                'title' => 'Test Title',
+                'content' => 'Test Content',
+                'status' => 'published'
             ])
             ->andReturn(['success' => true]);
 
@@ -85,9 +81,15 @@ class OginiEngineTest extends TestCase
     {
         $models = new Collection([$this->mockModel]);
 
-        $this->mockClient->shouldReceive('bulkIndexDocuments')
+        // First, updateDocument fails, then indexDocument succeeds
+        $this->mockClient->shouldReceive('updateDocument')
             ->once()
-            ->andThrow(new OginiException('Bulk operation failed'));
+            ->with('test_index', '1', [
+                'title' => 'Test Title',
+                'content' => 'Test Content',
+                'status' => 'published'
+            ])
+            ->andThrow(new OginiException('Update operation failed'));
 
         $this->mockClient->shouldReceive('indexDocument')
             ->once()

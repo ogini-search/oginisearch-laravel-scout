@@ -20,12 +20,10 @@ class BatchProcessor
     {
         $this->client = $client;
         $this->config = array_merge([
-            'chunk_size' => 100,
-            'max_parallel_requests' => 3,
-            'enable_parallel_processing' => true,
-            'retry_failed_chunks' => true,
-            'max_retry_attempts' => 2,
-            'delay_between_batches' => 0, // milliseconds
+            'batch_size' => 500,
+            'timeout' => 120,
+            'retry_attempts' => 3,
+            'delay_between_batches' => 100, // milliseconds
         ], $config);
     }
 
@@ -34,43 +32,86 @@ class BatchProcessor
      *
      * @param string $indexName
      * @param Collection $models
-     * @param callable|null $progressCallback
      * @return array
      * @throws OginiException
      */
-    public function bulkIndex(string $indexName, Collection $models, ?callable $progressCallback = null): array
+    public function bulkIndex(string $indexName, Collection $models): array
     {
-        if ($models->isEmpty()) {
-            return ['processed' => 0, 'errors' => []];
-        }
-
-        $totalCount = $models->count();
-        $processedCount = 0;
-        $errors = [];
-
-        // Convert models to documents
-        $documents = $models->map(function (Model $model) {
-            return [
-                'id' => $model->getScoutKey(),
-                'document' => $model->toSearchableArray(),
-            ];
-        });
-
-        // Process in chunks
-        $chunks = $documents->chunk($this->config['chunk_size']);
-
-        if ($this->config['enable_parallel_processing'] && $chunks->count() > 1) {
-            $result = $this->processChunksInParallel($indexName, $chunks, $progressCallback);
-        } else {
-            $result = $this->processChunksSequentially($indexName, $chunks, $progressCallback);
-        }
-
-        return [
-            'processed' => $result['processed'],
-            'total' => $totalCount,
-            'errors' => $result['errors'],
-            'success_rate' => $totalCount > 0 ? ($result['processed'] / $totalCount) * 100 : 100,
+        $results = [
+            'processed' => 0,
+            'total' => $models->count(),
+            'errors' => [],
+            'success_rate' => 0,
+            'batches_processed' => 0,
+            'total_batches' => 0
         ];
+
+        $batches = $models->chunk($this->config['batch_size']);
+        $results['total_batches'] = $batches->count();
+
+        foreach ($batches as $batchIndex => $batch) {
+            try {
+                $documents = $this->prepareBatchDocuments($batch);
+
+                if (empty($documents)) {
+                    $this->logWarning('BatchProcessor: Empty documents in batch', [
+                        'index' => $indexName,
+                        'batch_index' => $batchIndex,
+                        'batch_size' => $batch->count()
+                    ]);
+                    continue;
+                }
+
+                $response = $this->client->bulkIndexDocuments($indexName, $documents);
+
+                $results['processed'] += count($documents);
+                $results['batches_processed']++;
+
+                // Small delay between batches to prevent overwhelming the server
+                if ($this->config['delay_between_batches'] > 0 && $batchIndex < $batches->count() - 1) {
+                    usleep($this->config['delay_between_batches'] * 1000);
+                }
+            } catch (OginiException $e) {
+                $results['errors'][] = [
+                    'batch_index' => $batchIndex,
+                    'batch_size' => $batch->count(),
+                    'error' => $e->getMessage(),
+                    'error_code' => $e->getCode(),
+                    'timestamp' => now()->toISOString()
+                ];
+
+                $this->logError('BatchProcessor: Bulk indexing failed', [
+                    'index' => $indexName,
+                    'batch_index' => $batchIndex,
+                    'batch_size' => $batch->count(),
+                    'error' => $e->getMessage(),
+                    'error_code' => $e->getCode()
+                ]);
+
+                // Try individual fallback for failed batch
+                $this->fallbackToIndividualIndexing($indexName, $batch, $results);
+            } catch (\Exception $e) {
+                $results['errors'][] = [
+                    'batch_index' => $batchIndex,
+                    'batch_size' => $batch->count(),
+                    'error' => $e->getMessage(),
+                    'timestamp' => now()->toISOString()
+                ];
+
+                $this->logError('BatchProcessor: Unexpected error during bulk indexing', [
+                    'index' => $indexName,
+                    'batch_index' => $batchIndex,
+                    'batch_size' => $batch->count(),
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        $results['success_rate'] = $results['total'] > 0
+            ? round(($results['processed'] / $results['total']) * 100, 2)
+            : 0;
+
+        return $results;
     }
 
     /**
@@ -181,18 +222,12 @@ class BatchProcessor
         $errors = [];
         $processed = 0;
 
-        if (class_exists('Illuminate\Support\Facades\Log') && method_exists('Illuminate\Support\Facades\Log', 'warning')) {
-            try {
-                \Illuminate\Support\Facades\Log::warning('Bulk indexing chunk failed', [
-                    'index' => $indexName,
-                    'chunk_index' => $chunkIndex,
-                    'chunk_size' => $chunk->count(),
-                    'error' => $exception->getMessage(),
-                ]);
-            } catch (\Exception $e) {
-                // Ignore logging errors in test environment
-            }
-        }
+        $this->logWarning('Bulk indexing chunk failed', [
+            'index' => $indexName,
+            'chunk_index' => $chunkIndex,
+            'chunk_size' => $chunk->count(),
+            'error' => $exception->getMessage(),
+        ]);
 
         // Try individual document indexing if retry is enabled
         if ($this->config['retry_failed_chunks']) {
@@ -244,57 +279,53 @@ class BatchProcessor
      *
      * @param string $indexName
      * @param Collection $models
-     * @param callable|null $progressCallback
      * @return array
      */
-    public function bulkDelete(string $indexName, Collection $models, ?callable $progressCallback = null): array
+    public function bulkDelete(string $indexName, Collection $models): array
     {
-        if ($models->isEmpty()) {
-            return ['processed' => 0, 'errors' => []];
-        }
+        $results = ['processed' => 0, 'total' => $models->count(), 'errors' => [], 'success_rate' => 0];
 
-        $totalCount = $models->count();
-        $processedCount = 0;
-        $errors = [];
+        $batches = $models->chunk($this->config['batch_size']);
 
-        // Get document IDs
-        $documentIds = $models->map(function (Model $model) {
-            return $model->getScoutKey();
-        });
+        foreach ($batches as $batchIndex => $batch) {
+            try {
+                $documentIds = $batch->map(function ($model) {
+                    return (string) $model->getScoutKey();
+                })->toArray();
 
-        // Process deletions in chunks
-        $chunks = $documentIds->chunk($this->config['chunk_size']);
-
-        foreach ($chunks as $chunkIndex => $chunk) {
-            foreach ($chunk as $documentId) {
-                try {
+                // Use individual deletions since bulkDeleteDocuments is not available
+                foreach ($documentIds as $documentId) {
                     $this->client->deleteDocument($indexName, $documentId);
-                    $processedCount++;
-                } catch (OginiException $e) {
-                    $errors[] = [
-                        'document_id' => $documentId,
-                        'error' => $e->getMessage(),
-                        'chunk_index' => $chunkIndex,
-                    ];
                 }
-            }
 
-            if ($progressCallback) {
-                $progressCallback($processedCount, $chunk->count(), $chunkIndex + 1, $chunks->count());
-            }
+                $results['processed'] += count($documentIds);
 
-            // Add delay between batches if configured
-            if ($this->config['delay_between_batches'] > 0) {
-                usleep($this->config['delay_between_batches'] * 1000);
+                // Small delay between batches
+                if ($this->config['delay_between_batches'] > 0) {
+                    usleep($this->config['delay_between_batches'] * 1000);
+                }
+            } catch (\Exception $e) {
+                $results['errors'][] = [
+                    'batch_index' => $batchIndex,
+                    'batch_size' => $batch->count(),
+                    'error' => $e->getMessage(),
+                    'timestamp' => now()->toISOString()
+                ];
+
+                $this->logError('BatchProcessor: Bulk deletion failed', [
+                    'index' => $indexName,
+                    'batch_index' => $batchIndex,
+                    'batch_size' => $batch->count(),
+                    'error' => $e->getMessage()
+                ]);
             }
         }
 
-        return [
-            'processed' => $processedCount,
-            'total' => $totalCount,
-            'errors' => $errors,
-            'success_rate' => $totalCount > 0 ? ($processedCount / $totalCount) * 100 : 100,
-        ];
+        $results['success_rate'] = $results['total'] > 0
+            ? round(($results['processed'] / $results['total']) * 100, 2)
+            : 0;
+
+        return $results;
     }
 
     /**
@@ -305,11 +336,10 @@ class BatchProcessor
     public function getStatistics(): array
     {
         return [
-            'chunk_size' => $this->config['chunk_size'],
-            'max_parallel_requests' => $this->config['max_parallel_requests'],
-            'parallel_processing_enabled' => $this->config['enable_parallel_processing'],
-            'retry_enabled' => $this->config['retry_failed_chunks'],
-            'max_retry_attempts' => $this->config['max_retry_attempts'],
+            'batch_size' => $this->config['batch_size'],
+            'timeout' => $this->config['timeout'],
+            'retry_attempts' => $this->config['retry_attempts'],
+            'delay_between_batches' => $this->config['delay_between_batches'],
         ];
     }
 
@@ -322,5 +352,95 @@ class BatchProcessor
     public function updateConfig(array $config): void
     {
         $this->config = array_merge($this->config, $config);
+    }
+
+    protected function prepareBatchDocuments(Collection $models): array
+    {
+        $documents = [];
+
+        foreach ($models as $model) {
+            $searchableArray = $model->toSearchableArray();
+
+            if (!empty($searchableArray)) {
+                $documents[] = [
+                    'id' => (string) $model->getScoutKey(),
+                    'document' => $searchableArray
+                ];
+            }
+        }
+
+        return $documents;
+    }
+
+    protected function fallbackToIndividualIndexing(string $indexName, Collection $batch, array &$results): void
+    {
+        Log::info('BatchProcessor: Attempting individual fallback for failed batch', [
+            'index' => $indexName,
+            'batch_size' => $batch->count()
+        ]);
+
+        foreach ($batch as $model) {
+            try {
+                $documentId = (string) $model->getScoutKey();
+                $documentData = $model->toSearchableArray();
+
+                if (!empty($documentData)) {
+                    $this->client->indexDocument($indexName, $documentId, $documentData);
+                    $results['processed']++;
+                }
+            } catch (\Exception $e) {
+                $results['errors'][] = [
+                    'model_id' => $model->getScoutKey(),
+                    'error' => $e->getMessage(),
+                    'fallback' => true,
+                    'timestamp' => now()->toISOString()
+                ];
+
+                Log::error('BatchProcessor: Individual fallback failed', [
+                    'index' => $indexName,
+                    'model_id' => $model->getScoutKey(),
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+    }
+
+    public function getConfig(): array
+    {
+        return $this->config;
+    }
+
+    /**
+     * Log an error if logging is available.
+     *
+     * @param string $message
+     * @param array $context
+     */
+    protected function logError(string $message, array $context = []): void
+    {
+        if (class_exists('\Illuminate\Support\Facades\Log')) {
+            try {
+                \Illuminate\Support\Facades\Log::error($message, $context);
+            } catch (\Exception $e) {
+                // Ignore logging errors in test environment
+            }
+        }
+    }
+
+    /**
+     * Log a warning if logging is available.
+     *
+     * @param string $message
+     * @param array $context
+     */
+    protected function logWarning(string $message, array $context = []): void
+    {
+        if (class_exists('\Illuminate\Support\Facades\Log')) {
+            try {
+                \Illuminate\Support\Facades\Log::warning($message, $context);
+            } catch (\Exception $e) {
+                // Ignore logging errors in test environment
+            }
+        }
     }
 }

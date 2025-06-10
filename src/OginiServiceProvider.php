@@ -13,6 +13,8 @@ use OginiScoutDriver\Services\UpdateChecker;
 use OginiScoutDriver\Services\UpdateNotificationService;
 use OginiScoutDriver\Console\CheckUpdatesCommand;
 use OginiScoutDriver\Console\OginiHealthCheckCommand;
+use OginiScoutDriver\Console\Commands\BulkImportCommand;
+use OginiScoutDriver\Services\ModelDiscoveryService;
 use Illuminate\Support\Facades\Event;
 
 class OginiServiceProvider extends ServiceProvider
@@ -55,6 +57,7 @@ class OginiServiceProvider extends ServiceProvider
 
         $this->app->singleton(UpdateChecker::class);
         $this->app->singleton(UpdateNotificationService::class);
+        $this->app->singleton(ModelDiscoveryService::class);
     }
 
     /**
@@ -72,6 +75,7 @@ class OginiServiceProvider extends ServiceProvider
             $this->commands([
                 CheckUpdatesCommand::class,
                 OginiHealthCheckCommand::class,
+                BulkImportCommand::class,
             ]);
         }
 

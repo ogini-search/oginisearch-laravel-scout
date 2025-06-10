@@ -83,12 +83,19 @@ return [
 
         // Batch processing settings
         'batch' => [
-            'chunk_size' => env('OGINI_BATCH_CHUNK_SIZE', 100),
-            'max_parallel_requests' => env('OGINI_BATCH_MAX_PARALLEL', 3),
-            'enable_parallel_processing' => env('OGINI_BATCH_PARALLEL_ENABLED', true),
-            'retry_failed_chunks' => env('OGINI_BATCH_RETRY_FAILED', true),
-            'max_retry_attempts' => env('OGINI_BATCH_MAX_RETRIES', 2),
-            'delay_between_batches' => env('OGINI_BATCH_DELAY', 0), // milliseconds
+            'enabled' => env('OGINI_BATCH_ENABLED', true),
+            'batch_size' => env('OGINI_BATCH_SIZE', 500),
+            'timeout' => env('OGINI_BATCH_TIMEOUT', 120),
+            'retry_attempts' => env('OGINI_BATCH_RETRY_ATTEMPTS', 3),
+            'delay_between_batches' => env('OGINI_BATCH_DELAY', 100), // milliseconds
+        ],
+
+        // Queue processing settings
+        'queue' => [
+            'connection' => env('OGINI_QUEUE_CONNECTION', env('QUEUE_CONNECTION', 'database')),
+            'queue_name' => env('OGINI_QUEUE_NAME', 'ogini-bulk'),
+            'timeout' => env('OGINI_QUEUE_TIMEOUT', 600),
+            'retry_times' => env('OGINI_QUEUE_RETRY_TIMES', 3),
         ],
 
         // Connection pool settings

@@ -151,6 +151,23 @@ class OginiEngine extends Engine
 
         $indexName = $models->first()->searchableAs();
 
+        // Use batch processor if available for better performance
+        if ($this->batchProcessor) {
+            $result = $this->batchProcessor->bulkDelete($indexName, $models);
+
+            if (!empty($result['errors'])) {
+                $this->logError('Batch deletion completed with errors', [
+                    'processed' => $result['processed'],
+                    'total' => $result['total'],
+                    'success_rate' => $result['success_rate'],
+                    'error_count' => count($result['errors']),
+                ]);
+            }
+
+            return;
+        }
+
+        // Fallback to individual deletions
         foreach ($models as $model) {
             try {
                 $this->client->deleteDocument($indexName, $model->getScoutKey());
