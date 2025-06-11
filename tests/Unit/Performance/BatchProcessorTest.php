@@ -238,12 +238,28 @@ class BatchProcessorTest extends TestCase
             $progressCalls[] = compact('processed', 'chunkSize', 'chunkIndex', 'totalChunks');
         };
 
-        // Note: The current BatchProcessor doesn't use progress callbacks in bulkIndex
-        // This test validates that calling with a callback doesn't break anything
-        $this->batchProcessor->bulkIndex('test_index', $models);
+        // Test with progress callback
+        $result = $this->batchProcessor->bulkIndex('test_index', $models, $progressCallback);
 
-        // Since bulkIndex doesn't use callbacks, we just verify it completes successfully
-        $this->assertTrue(true); // Test passes if no exceptions thrown
+        // Verify processing completed successfully
+        $this->assertEquals(3, $result['processed']);
+        $this->assertEquals(3, $result['total']);
+        $this->assertEquals(100, $result['success_rate']);
+
+        // Verify progress callback was called
+        $this->assertCount(2, $progressCalls); // Two batches with batch_size=2
+
+        // First batch should process 2 items
+        $this->assertEquals(2, $progressCalls[0]['processed']);
+        $this->assertEquals(2, $progressCalls[0]['chunkSize']);
+        $this->assertEquals(1, $progressCalls[0]['chunkIndex']);
+        $this->assertEquals(2, $progressCalls[0]['totalChunks']);
+
+        // Second batch should process 1 item (total 3)
+        $this->assertEquals(3, $progressCalls[1]['processed']);
+        $this->assertEquals(1, $progressCalls[1]['chunkSize']);
+        $this->assertEquals(2, $progressCalls[1]['chunkIndex']);
+        $this->assertEquals(2, $progressCalls[1]['totalChunks']);
     }
 
     /** @test */

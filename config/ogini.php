@@ -43,6 +43,7 @@ return [
         'timeout' => env('OGINI_TIMEOUT', 30),
         'retry_attempts' => env('OGINI_RETRY_ATTEMPTS', 3),
         'retry_delay' => env('OGINI_RETRY_DELAY', 100), // milliseconds
+        'bulk_timeout' => env('OGINI_BULK_TIMEOUT', 600), // 10 minutes for bulk operations
     ],
 
     /*
@@ -85,7 +86,7 @@ return [
         'batch' => [
             'enabled' => env('OGINI_BATCH_ENABLED', true),
             'batch_size' => env('OGINI_BATCH_SIZE', 500),
-            'timeout' => env('OGINI_BATCH_TIMEOUT', 120),
+            'timeout' => env('OGINI_BATCH_TIMEOUT', 600), // 10 minutes for batch operations
             'retry_attempts' => env('OGINI_BATCH_RETRY_ATTEMPTS', 3),
             'delay_between_batches' => env('OGINI_BATCH_DELAY', 100), // milliseconds
         ],

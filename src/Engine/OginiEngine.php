@@ -85,10 +85,11 @@ class OginiEngine extends Engine
      * Update the given model in the index.
      *
      * @param Collection $models
+     * @param callable|null $progressCallback Optional progress callback
      * @return void
      * @throws OginiException
      */
-    public function update($models): void
+    public function update($models, ?callable $progressCallback = null): void
     {
         if ($models->isEmpty()) {
             return;
@@ -98,7 +99,7 @@ class OginiEngine extends Engine
 
         // Use batch processor if available for better performance
         if ($this->batchProcessor) {
-            $result = $this->batchProcessor->bulkIndex($indexName, $models);
+            $result = $this->batchProcessor->bulkIndex($indexName, $models, $progressCallback);
 
             if (!empty($result['errors'])) {
                 $this->logError('Batch indexing completed with errors', [
@@ -386,20 +387,28 @@ class OginiEngine extends Engine
         $indexName = $builder->model->searchableAs();
         $searchQuery = $this->buildSearchQuery($builder);
 
-        // Use query cache if available
+        // Use query cache if available and Redis is accessible
         if ($this->queryCache && $this->queryCache->isEnabled()) {
-            return $this->queryCache->remember(
-                $indexName,
-                $searchQuery,
-                $options,
-                function () use ($indexName, $searchQuery, $options, $builder) {
-                    return $this->client->search(
-                        $indexName,
-                        $builder->query ?: '',
-                        array_merge($searchQuery, $options)
-                    );
-                }
-            );
+            try {
+                return $this->queryCache->remember(
+                    $indexName,
+                    $searchQuery,
+                    $options,
+                    function () use ($indexName, $searchQuery, $options, $builder) {
+                        return $this->client->search(
+                            $indexName,
+                            $builder->query ?: '',
+                            array_merge($searchQuery, $options)
+                        );
+                    }
+                );
+            } catch (\Exception $e) {
+                // If Redis is unavailable, proceed without caching
+                $this->logError('QueryCache failed, proceeding without cache', [
+                    'error' => $e->getMessage(),
+                    'index' => $indexName
+                ]);
+            }
         }
 
         return $this->client->search(
@@ -451,8 +460,7 @@ class OginiEngine extends Engine
             foreach ($builder->wheres as $field => $value) {
                 $filters[] = [
                     'term' => [
-                        'field' => $field,
-                        'value' => $value,
+                        $field => $value,
                     ],
                 ];
             }
@@ -519,6 +527,16 @@ class OginiEngine extends Engine
     public function getClient(): OginiClient
     {
         return $this->client;
+    }
+
+    /**
+     * Get the BatchProcessor instance if available.
+     *
+     * @return BatchProcessor|null
+     */
+    public function getBatchProcessor(): ?BatchProcessor
+    {
+        return $this->batchProcessor;
     }
 
     /**

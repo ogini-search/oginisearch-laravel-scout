@@ -32,10 +32,11 @@ class BatchProcessor
      *
      * @param string $indexName
      * @param Collection $models
+     * @param callable|null $progressCallback
      * @return array
      * @throws OginiException
      */
-    public function bulkIndex(string $indexName, Collection $models): array
+    public function bulkIndex(string $indexName, Collection $models, ?callable $progressCallback = null): array
     {
         $results = [
             'processed' => 0,
@@ -67,6 +68,11 @@ class BatchProcessor
                 $results['processed'] += count($documents);
                 $results['batches_processed']++;
 
+                // Call progress callback if provided
+                if ($progressCallback) {
+                    $progressCallback($results['processed'], count($documents), $batchIndex + 1, $results['total_batches']);
+                }
+
                 // Small delay between batches to prevent overwhelming the server
                 if ($this->config['delay_between_batches'] > 0 && $batchIndex < $batches->count() - 1) {
                     usleep($this->config['delay_between_batches'] * 1000);
@@ -89,7 +95,7 @@ class BatchProcessor
                 ]);
 
                 // Try individual fallback for failed batch
-                $this->fallbackToIndividualIndexing($indexName, $batch, $results);
+                $this->fallbackToIndividualIndexing($indexName, $batch, $results, $progressCallback);
             } catch (\Exception $e) {
                 $results['errors'][] = [
                     'batch_index' => $batchIndex,
@@ -372,7 +378,7 @@ class BatchProcessor
         return $documents;
     }
 
-    protected function fallbackToIndividualIndexing(string $indexName, Collection $batch, array &$results): void
+    protected function fallbackToIndividualIndexing(string $indexName, Collection $batch, array &$results, ?callable $progressCallback = null): void
     {
         Log::info('BatchProcessor: Attempting individual fallback for failed batch', [
             'index' => $indexName,
@@ -387,6 +393,11 @@ class BatchProcessor
                 if (!empty($documentData)) {
                     $this->client->indexDocument($indexName, $documentId, $documentData);
                     $results['processed']++;
+
+                    // Call progress callback for individual fallback processing
+                    if ($progressCallback) {
+                        $progressCallback($results['processed'], 1, 0, 0);
+                    }
                 }
             } catch (\Exception $e) {
                 $results['errors'][] = [

@@ -24,6 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **🏗️ Command Validation Testing**: Comprehensive test suite ensuring universal compatibility
 - **📚 Scout Import Analysis**: Complete documentation comparing scout:import vs ogini:bulk-import
 
+### Fixed
+- **🔧 Real-time Progress Bar Updates**: Fixed bulk import command progress bar to update in real-time during batch processing
+  - Added progress callback mechanism to `BatchProcessor` for granular progress tracking
+  - Enhanced `OginiEngine->update()` method to support progress callbacks
+  - Modified `BulkImportCommand` to use direct OginiEngine integration for better progress reporting
+  - Progress bar now updates after each batch (e.g., every 500 records) instead of only after database chunks (e.g., every 1000 records)
+  - **Impact**: Users now see continuous progress updates during large bulk imports instead of waiting until completion
+
 ### Enhanced
 - **BatchProcessor Performance**: Improved error handling and fallback strategies
 - **OginiEngine Integration**: Enhanced bulk processing with better error recovery

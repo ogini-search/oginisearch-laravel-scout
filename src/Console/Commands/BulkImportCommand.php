@@ -5,7 +5,9 @@ namespace OginiScoutDriver\Console\Commands;
 use Illuminate\Console\Command;
 use OginiScoutDriver\Jobs\BulkScoutImportJob;
 use OginiScoutDriver\Services\ModelDiscoveryService;
+use OginiScoutDriver\Engine\OginiEngine;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\App;
 use Exception;
 
 class BulkImportCommand extends Command
@@ -97,11 +99,23 @@ class BulkImportCommand extends Command
 
     private function processImmediately(string $modelClass, string $modelName): int
     {
+        // Handle execution timeout for large datasets
+        $this->handleExecutionTimeout();
+
         $totalCount = $modelClass::count();
         $limit = (int) $this->option('limit');
         $recordsToProcess = $limit > 0 ? min($limit, $totalCount) : $totalCount;
 
         $this->info("📊 Processing {$recordsToProcess} records");
+
+        // Warn about large datasets and suggest queue option
+        if ($recordsToProcess > 10000 && !$this->option('queue')) {
+            $this->warn("⚠️  Processing {$recordsToProcess} records without queue. Consider using --queue for large datasets.");
+            if (!$this->confirm('Continue with immediate processing?')) {
+                $this->info('💡 Use --queue option for better handling of large datasets.');
+                return 0;
+            }
+        }
 
         $progressBar = $this->output->createProgressBar($recordsToProcess);
         $progressBar->start();
@@ -112,6 +126,16 @@ class BulkImportCommand extends Command
         $chunkSize = (int) $this->option('chunk-size');
         $startTime = microtime(true);
 
+        // Get the OginiEngine for direct progress tracking
+        $engine = null;
+        if (!$this->option('dry-run')) {
+            try {
+                $engine = App::make(OginiEngine::class);
+            } catch (Exception $e) {
+                $this->warn("Could not get OginiEngine directly, falling back to Scout methods");
+            }
+        }
+
         $modelClass::query()
             ->when($limit > 0, function ($query) use ($limit) {
                 return $query->limit($limit);
@@ -121,7 +145,8 @@ class BulkImportCommand extends Command
                 &$successCount,
                 &$errorCount,
                 &$progressBar,
-                $recordsToProcess
+                $recordsToProcess,
+                $engine
             ) {
                 if ($processed >= $recordsToProcess) {
                     return false;
@@ -131,20 +156,32 @@ class BulkImportCommand extends Command
 
                 if (!$this->option('dry-run')) {
                     try {
-                        // Use Scout's bulk processing
-                        $batchModels->searchable();
-                        $successCount += $batchModels->count();
+                        if ($engine && $engine->getBatchProcessor()) {
+                            // Use OginiEngine directly with progress tracking
+                            $progressCallback = function ($processedInBatch, $batchSize, $batchIndex, $totalBatches) use (&$progressBar) {
+                                $progressBar->advance($batchSize);
+                            };
+
+                            $engine->update($batchModels, $progressCallback);
+                            $successCount += $batchModels->count();
+                        } else {
+                            // Fallback to Scout's bulk processing
+                            $batchModels->searchable();
+                            $successCount += $batchModels->count();
+                            $progressBar->advance($batchModels->count());
+                        }
                     } catch (Exception $e) {
                         $this->newLine();
                         $this->error("   ❌ Error processing batch: " . $e->getMessage());
                         $errorCount += $batchModels->count();
+                        $progressBar->advance($batchModels->count());
                     }
                 } else {
                     $successCount += $batchModels->count();
+                    $progressBar->advance($batchModels->count());
                 }
 
                 $processed += $batchModels->count();
-                $progressBar->advance($batchModels->count());
 
                 if ($processed >= $recordsToProcess) {
                     return false;
@@ -166,6 +203,84 @@ class BulkImportCommand extends Command
         $this->info("   - Throughput: {$throughput} docs/second");
 
         return $errorCount > 0 ? 1 : 0;
+    }
+
+    /**
+     * Handle execution timeout configuration for long-running imports.
+     *
+     * @return void
+     */
+    private function handleExecutionTimeout(): void
+    {
+        // Set unlimited execution time for Artisan commands (like Laravel Scout does)
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
+        // Increase memory limit if needed for large datasets
+        $currentMemoryLimit = ini_get('memory_limit');
+        $recommendedMemoryLimit = '1G';
+
+        if ($this->convertToBytes($currentMemoryLimit) < $this->convertToBytes($recommendedMemoryLimit)) {
+            if (function_exists('ini_set')) {
+                @ini_set('memory_limit', $recommendedMemoryLimit);
+                $this->line("💾 Memory limit increased to {$recommendedMemoryLimit} for large dataset processing");
+            }
+        }
+
+        // Configure extended timeouts for the OginiEngine if available
+        $this->configureExtendedTimeouts();
+    }
+
+    /**
+     * Configure extended timeouts for bulk operations.
+     *
+     * @return void
+     */
+    private function configureExtendedTimeouts(): void
+    {
+        try {
+            // Set extended timeouts for bulk operations
+            $extendedConfig = [
+                'ogini.client.timeout' => 300,                    // 5 minutes per request
+                'ogini.performance.batch_processing.timeout' => 600, // 10 minutes per batch
+                'ogini.performance.connection_pool.request_timeout' => 300,
+            ];
+
+            foreach ($extendedConfig as $key => $value) {
+                config([$key => $value]);
+            }
+
+            $this->line("⏱️  Extended timeouts configured for bulk processing");
+        } catch (\Exception $e) {
+            // Ignore configuration errors in test environments
+        }
+    }
+
+    /**
+     * Convert memory limit string to bytes.
+     *
+     * @param string $memoryLimit
+     * @return int
+     */
+    private function convertToBytes(string $memoryLimit): int
+    {
+        $memoryLimit = trim($memoryLimit);
+        $last = strtolower($memoryLimit[strlen($memoryLimit) - 1]);
+        $number = (int) $memoryLimit;
+
+        switch ($last) {
+            case 'g':
+                $number *= 1024;
+                // no break
+            case 'm':
+                $number *= 1024;
+                // no break
+            case 'k':
+                $number *= 1024;
+        }
+
+        return $number;
     }
 
     private function processWithQueue(string $modelClass, string $modelName): int
