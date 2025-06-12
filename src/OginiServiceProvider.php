@@ -22,7 +22,7 @@ class OginiServiceProvider extends ServiceProvider
     /**
      * Package version.
      */
-    const VERSION = '1.0.3';
+    const VERSION = '1.0.5';
     /**
      * Register any application services.
      *

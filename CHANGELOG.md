@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - 2025-06-10
+## [1.0.5] - 2025-06-12
+
+### Fixed
+- **Batch Processing Configuration**: Fixed batch processor initialization to properly check enabled flag
+- **Service Provider Configuration**: Corrected performance configuration structure in OginiEngine initialization
+- **Stability Improvements**: Reverted to stable codebase state with working batch processing
+
+### Notes
+- This release represents a stable state with working batch processing functionality
+- Reverted from complex performance optimizations to focus on core stability
+- All basic Scout operations (indexing, searching, deleting) are fully functional
+
+## [1.1.0] - 2025-06-10 (Deprecated)
 
 ### Added
 - **🚀 Revolutionary Dynamic Model Discovery System**: Automatically discovers all searchable models in any Laravel application structure
