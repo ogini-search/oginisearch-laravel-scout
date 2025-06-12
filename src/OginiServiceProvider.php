@@ -22,7 +22,7 @@ class OginiServiceProvider extends ServiceProvider
     /**
      * Package version.
      */
-    const VERSION = '1.0.3';
+    const VERSION = '1.0.4';
     /**
      * Register any application services.
      *
@@ -79,9 +79,12 @@ class OginiServiceProvider extends ServiceProvider
             ]);
         }
 
-        // Register event listeners
-        Event::subscribe(LogIndexingActivity::class);
-        Event::subscribe(LogSearchActivity::class);
+        // Register event listeners only if enabled in configuration
+        $config = $this->app['config']['ogini'];
+        if (isset($config['events']['enabled']) && $config['events']['enabled']) {
+            Event::subscribe(LogIndexingActivity::class);
+            Event::subscribe(LogSearchActivity::class);
+        }
 
         $this->app->make(EngineManager::class)->extend('ogini', function ($app) {
             $config = $app['config']['ogini'];

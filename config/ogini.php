@@ -43,7 +43,7 @@ return [
         'timeout' => env('OGINI_TIMEOUT', 30),
         'retry_attempts' => env('OGINI_RETRY_ATTEMPTS', 3),
         'retry_delay' => env('OGINI_RETRY_DELAY', 100), // milliseconds
-        'bulk_timeout' => env('OGINI_BULK_TIMEOUT', 600), // 10 minutes for bulk operations
+        'bulk_timeout' => env('OGINI_BULK_TIMEOUT', 300),
     ],
 
     /*
@@ -59,6 +59,20 @@ return [
     'engine' => [
         'soft_delete' => env('OGINI_SOFT_DELETE', false),
         'batch_size' => env('OGINI_BATCH_SIZE', 500),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Event Logging Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Controls whether to enable event-based logging for search and indexing
+    | operations. Disabled by default for better performance.
+    |
+    */
+
+    'events' => [
+        'enabled' => env('OGINI_EVENTS_ENABLED', false), // Disabled by default for performance
     ],
 
     /*
@@ -95,7 +109,7 @@ return [
         'queue' => [
             'connection' => env('OGINI_QUEUE_CONNECTION', env('QUEUE_CONNECTION', 'database')),
             'queue_name' => env('OGINI_QUEUE_NAME', 'ogini-bulk'),
-            'timeout' => env('OGINI_QUEUE_TIMEOUT', 600),
+            'timeout' => env('OGINI_QUEUE_TIMEOUT', 300),
             'retry_times' => env('OGINI_QUEUE_RETRY_TIMES', 3),
         ],
 
@@ -113,13 +127,13 @@ return [
         // Query optimization settings
         'query_optimization' => [
             'enabled' => env('OGINI_QUERY_OPTIMIZATION_ENABLED', true),
-            'enable_query_rewriting' => env('OGINI_QUERY_REWRITING_ENABLED', true),
-            'enable_field_optimization' => env('OGINI_FIELD_OPTIMIZATION_ENABLED', true),
-            'enable_filter_optimization' => env('OGINI_FILTER_OPTIMIZATION_ENABLED', true),
+            'enable_query_rewriting' => env('OGINI_QUERY_REWRITING_ENABLED', false),
+            'enable_field_optimization' => env('OGINI_FIELD_OPTIMIZATION_ENABLED', false),
+            'enable_filter_optimization' => env('OGINI_FILTER_OPTIMIZATION_ENABLED', false),
             'max_query_length' => env('OGINI_MAX_QUERY_LENGTH', 1000),
-            'enable_wildcard_optimization' => env('OGINI_WILDCARD_OPTIMIZATION_ENABLED', true),
-            'enable_phrase_detection' => env('OGINI_PHRASE_DETECTION_ENABLED', true),
-            'boost_exact_matches' => env('OGINI_BOOST_EXACT_MATCHES', true),
+            'enable_wildcard_optimization' => env('OGINI_WILDCARD_OPTIMIZATION_ENABLED', false),
+            'enable_phrase_detection' => env('OGINI_PHRASE_DETECTION_ENABLED', false),
+            'boost_exact_matches' => env('OGINI_BOOST_EXACT_MATCHES', false),
             'min_term_length' => env('OGINI_MIN_TERM_LENGTH', 3),
             'max_complexity_score' => env('OGINI_MAX_COMPLEXITY_SCORE', 15),
             'performance_check_threshold' => env('OGINI_PERFORMANCE_CHECK_THRESHOLD', 100),

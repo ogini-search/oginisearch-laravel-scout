@@ -56,28 +56,28 @@ class OginiEngine extends Engine
     {
         $performanceConfig = $this->config['performance'] ?? [];
 
-        // Initialize batch processor
+        // Only initialize batch processor if enabled AND we're not in a search context
         if (isset($performanceConfig['batch']) && $performanceConfig['batch']['enabled']) {
-            $this->batchProcessor = new BatchProcessor($this->client, $performanceConfig['batch']);
+            // Lazy initialization - only create when actually needed
+            $this->batchProcessor = null; // Will be created on first use
         }
 
-        // Initialize query cache
+        // Only initialize query cache if enabled AND cache is available
         if ($cache && isset($performanceConfig['cache']) && $performanceConfig['cache']['enabled']) {
-            $this->queryCache = new QueryCache($cache, $this->client, $performanceConfig['cache']);
+            // Lazy initialization - only create when actually needed  
+            $this->queryCache = null; // Will be created on first use
         }
 
-        // Initialize connection pool
+        // Only initialize connection pool if enabled
         if (isset($performanceConfig['connection_pool']) && $performanceConfig['connection_pool']['enabled']) {
-            $poolConfig = array_merge($performanceConfig['connection_pool'], [
-                'base_url' => $this->config['base_url'] ?? 'http://localhost:3000',
-                'api_key' => $this->config['api_key'] ?? '',
-            ]);
-            $this->connectionPool = new ConnectionPool($poolConfig);
+            // Lazy initialization - only create when actually needed
+            $this->connectionPool = null; // Will be created on first use
         }
 
-        // Initialize query optimizer
+        // Only initialize query optimizer if enabled
         if (isset($performanceConfig['query_optimization']) && $performanceConfig['query_optimization']['enabled']) {
-            $this->queryOptimizer = new QueryOptimizer($performanceConfig['query_optimization']);
+            // Lazy initialization - only create when actually needed
+            $this->queryOptimizer = null; // Will be created on first use
         }
     }
 
@@ -98,8 +98,9 @@ class OginiEngine extends Engine
         $indexName = $models->first()->searchableAs();
 
         // Use batch processor if available for better performance
-        if ($this->batchProcessor) {
-            $result = $this->batchProcessor->bulkIndex($indexName, $models, $progressCallback);
+        $batchProcessor = $this->getBatchProcessor();
+        if ($batchProcessor) {
+            $result = $batchProcessor->bulkIndex($indexName, $models, $progressCallback);
 
             if (!empty($result['errors'])) {
                 $this->logError('Batch indexing completed with errors', [
@@ -153,8 +154,9 @@ class OginiEngine extends Engine
         $indexName = $models->first()->searchableAs();
 
         // Use batch processor if available for better performance
-        if ($this->batchProcessor) {
-            $result = $this->batchProcessor->bulkDelete($indexName, $models);
+        $batchProcessor = $this->getBatchProcessor();
+        if ($batchProcessor) {
+            $result = $batchProcessor->bulkDelete($indexName, $models);
 
             if (!empty($result['errors'])) {
                 $this->logError('Batch deletion completed with errors', [
@@ -388,9 +390,10 @@ class OginiEngine extends Engine
         $searchQuery = $this->buildSearchQuery($builder);
 
         // Use query cache if available and Redis is accessible
-        if ($this->queryCache && $this->queryCache->isEnabled()) {
+        $queryCache = $this->getQueryCache();
+        if ($queryCache && $queryCache->isEnabled()) {
             try {
-                return $this->queryCache->remember(
+                return $queryCache->remember(
                     $indexName,
                     $searchQuery,
                     $options,
@@ -404,10 +407,11 @@ class OginiEngine extends Engine
                 );
             } catch (\Exception $e) {
                 // If Redis is unavailable, proceed without caching
-                $this->logError('QueryCache failed, proceeding without cache', [
-                    'error' => $e->getMessage(),
-                    'index' => $indexName
-                ]);
+                // HOTFIX: Disable logging to prevent production timeouts
+                // $this->logError('QueryCache failed, proceeding without cache', [
+                //     'error' => $e->getMessage(),
+                //     'index' => $indexName
+                // ]);
             }
         }
 
@@ -494,8 +498,9 @@ class OginiEngine extends Engine
         }
 
         // Apply query optimization if available
-        if ($this->queryOptimizer) {
-            $query = $this->queryOptimizer->optimizeQuery($query);
+        $queryOptimizer = $this->getQueryOptimizer();
+        if ($queryOptimizer) {
+            $query = $queryOptimizer->optimizeQuery($query);
         }
 
         return $query;
@@ -536,7 +541,40 @@ class OginiEngine extends Engine
      */
     public function getBatchProcessor(): ?BatchProcessor
     {
+        // Lazy initialization
+        if ($this->batchProcessor === null && isset($this->config['performance']['batch']) && $this->config['performance']['batch']['enabled']) {
+            $this->batchProcessor = new BatchProcessor($this->client, $this->config['performance']['batch']);
+        }
         return $this->batchProcessor;
+    }
+
+    /**
+     * Get the QueryCache instance if available.
+     *
+     * @return QueryCache|null
+     */
+    protected function getQueryCache(): ?QueryCache
+    {
+        // Lazy initialization
+        if ($this->queryCache === null && isset($this->config['performance']['cache']) && $this->config['performance']['cache']['enabled']) {
+            $cache = app('cache')->store($this->config['performance']['cache']['driver'] ?? 'default');
+            $this->queryCache = new QueryCache($cache, $this->client, $this->config['performance']['cache']);
+        }
+        return $this->queryCache;
+    }
+
+    /**
+     * Get the QueryOptimizer instance if available.
+     *
+     * @return QueryOptimizer|null
+     */
+    protected function getQueryOptimizer(): ?QueryOptimizer
+    {
+        // Lazy initialization
+        if ($this->queryOptimizer === null && isset($this->config['performance']['query_optimization']) && $this->config['performance']['query_optimization']['enabled']) {
+            $this->queryOptimizer = new QueryOptimizer($this->config['performance']['query_optimization']);
+        }
+        return $this->queryOptimizer;
     }
 
     /**

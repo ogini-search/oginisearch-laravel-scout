@@ -429,13 +429,14 @@ class BatchProcessor
      */
     protected function logError(string $message, array $context = []): void
     {
-        if (class_exists('\Illuminate\Support\Facades\Log')) {
-            try {
-                \Illuminate\Support\Facades\Log::error($message, $context);
-            } catch (\Exception $e) {
-                // Ignore logging errors in test environment
-            }
-        }
+        // HOTFIX: Disable logging to prevent production timeouts
+        // if (class_exists('\Illuminate\Support\Facades\Log')) {
+        //     try {
+        //         \Illuminate\Support\Facades\Log::error($message, $context);
+        //     } catch (\Exception $e) {
+        //         // Ignore logging errors in test environment
+        //     }
+        // }
     }
 
     /**
@@ -446,12 +447,13 @@ class BatchProcessor
      */
     protected function logWarning(string $message, array $context = []): void
     {
-        if (class_exists('\Illuminate\Support\Facades\Log')) {
-            try {
-                \Illuminate\Support\Facades\Log::warning($message, $context);
-            } catch (\Exception $e) {
-                // Ignore logging errors in test environment
-            }
-        }
+        // HOTFIX: Disable logging to prevent production timeouts
+        // if (class_exists('\Illuminate\Support\Facades\Log')) {
+        //     try {
+        //         \Illuminate\Support\Facades\Log::warning($message, $context);
+        //     } catch (\Exception $e) {
+        //         // Ignore logging errors in test environment
+        //     }
+        // }
     }
 }

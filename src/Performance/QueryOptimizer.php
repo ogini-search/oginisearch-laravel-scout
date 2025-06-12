@@ -473,28 +473,29 @@ class QueryOptimizer
      */
     protected function logOptimization(array $original, array $optimized): void
     {
-        $debug = false;
-        if (function_exists('config')) {
-            try {
-                $debug = config('app.debug');
-            } catch (\Exception $e) {
-                $debug = false;
-            }
-        }
+        // HOTFIX: Disable all logging to prevent production timeouts
+        // $debug = false;
+        // if (function_exists('config')) {
+        //     try {
+        //         $debug = config('app.debug');
+        //     } catch (\Exception $e) {
+        //         $debug = false;
+        //     }
+        // }
 
-        if ($debug && $original !== $optimized) {
-            if (class_exists('Illuminate\Support\Facades\Log')) {
-                try {
-                    \Illuminate\Support\Facades\Log::debug('Query optimized', [
-                        'original' => $original,
-                        'optimized' => $optimized,
-                        'optimizations_applied' => array_filter($this->optimizationRules),
-                    ]);
-                } catch (\Exception $e) {
-                    // Ignore logging errors in test environment
-                }
-            }
-        }
+        // if ($debug && $original !== $optimized) {
+        //     if (class_exists('Illuminate\Support\Facades\Log')) {
+        //         try {
+        //             \Illuminate\Support\Facades\Log::debug('Query optimized', [
+        //                 'original' => $original,
+        //                 'optimized' => $optimized,
+        //                 'optimizations_applied' => array_filter($this->optimizationRules),
+        //             ]);
+        //         } catch (\Exception $e) {
+        //             // Ignore logging errors in test environment
+        //         }
+        //     }
+        // }
     }
 
     /**
