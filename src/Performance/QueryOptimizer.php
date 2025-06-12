@@ -97,14 +97,33 @@ class QueryOptimizer
     {
         $stopwords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'];
 
-        if (isset($query['query']) && is_string($query['query'])) {
-            $words = explode(' ', strtolower($query['query']));
+        if (!isset($query['query']) || !is_array($query['query'])) {
+            return $query;
+        }
+
+        // Handle match query structure: {"query": {"match": {"value": "search term"}}}
+        if (isset($query['query']['match']['value']) && is_string($query['query']['match']['value'])) {
+            $searchTerm = $query['query']['match']['value'];
+            $words = explode(' ', strtolower($searchTerm));
             $filteredWords = array_filter($words, function ($word) use ($stopwords) {
                 return !in_array(trim($word), $stopwords) && strlen(trim($word)) >= $this->config['min_term_length'];
             });
 
             if (count($filteredWords) > 0) {
-                $query['query'] = implode(' ', $filteredWords);
+                $query['query']['match']['value'] = implode(' ', $filteredWords);
+            }
+        }
+
+        // Handle match query with field: {"query": {"match": {"field": "title", "value": "search term"}}}
+        if (isset($query['query']['match']['field']) && isset($query['query']['match']['value']) && is_string($query['query']['match']['value'])) {
+            $searchTerm = $query['query']['match']['value'];
+            $words = explode(' ', strtolower($searchTerm));
+            $filteredWords = array_filter($words, function ($word) use ($stopwords) {
+                return !in_array(trim($word), $stopwords) && strlen(trim($word)) >= $this->config['min_term_length'];
+            });
+
+            if (count($filteredWords) > 0) {
+                $query['query']['match']['value'] = implode(' ', $filteredWords);
             }
         }
 
@@ -116,25 +135,47 @@ class QueryOptimizer
      */
     protected function optimizeWildcards(array $query): array
     {
-        if (isset($query['query']) && is_string($query['query'])) {
-            $queryText = $query['query'];
+        if (!isset($query['query']) || !is_array($query['query'])) {
+            return $query;
+        }
 
-            // Remove excessive wildcards
-            $queryText = preg_replace('/\*{2,}/', '*', $queryText);
+        // Handle match query structure
+        if (isset($query['query']['match']['value']) && is_string($query['query']['match']['value'])) {
+            $queryText = $query['query']['match']['value'];
 
-            // Add wildcard to end of words for better matching (if not already present)
-            if (!str_contains($queryText, '*') && !str_contains($queryText, '"')) {
-                $words = explode(' ', $queryText);
-                $words = array_map(function ($word) {
-                    if (strlen(trim($word)) >= $this->config['min_term_length']) {
-                        return trim($word) . '*';
-                    }
-                    return $word;
-                }, $words);
-                $queryText = implode(' ', $words);
+            // Check if this should be converted to a wildcard query
+            if (str_contains($queryText, '*') || str_contains($queryText, '?')) {
+                // Convert to wildcard query structure
+                $field = $query['query']['match']['field'] ?? null;
+
+                // Remove excessive wildcards
+                $queryText = preg_replace('/\*{2,}/', '*', $queryText);
+
+                $query['query'] = [
+                    'wildcard' => [
+                        'field' => $field,
+                        'value' => $queryText
+                    ]
+                ];
+
+                // Remove the field if it was set at the top level
+                if (!$field) {
+                    unset($query['query']['wildcard']['field']);
+                }
+            } else {
+                // Add wildcard to end of words for better matching (if not already present)
+                if (!str_contains($queryText, '"')) {
+                    $words = explode(' ', $queryText);
+                    $words = array_map(function ($word) {
+                        if (strlen(trim($word)) >= $this->config['min_term_length']) {
+                            return trim($word) . '*';
+                        }
+                        return $word;
+                    }, $words);
+                    $queryText = implode(' ', $words);
+                    $query['query']['match']['value'] = $queryText;
+                }
             }
-
-            $query['query'] = $queryText;
         }
 
         return $query;
@@ -145,8 +186,13 @@ class QueryOptimizer
      */
     protected function detectAndOptimizePhrases(array $query): array
     {
-        if (isset($query['query']) && is_string($query['query'])) {
-            $queryText = $query['query'];
+        if (!isset($query['query']) || !is_array($query['query'])) {
+            return $query;
+        }
+
+        // Handle match query structure
+        if (isset($query['query']['match']['value']) && is_string($query['query']['match']['value'])) {
+            $queryText = $query['query']['match']['value'];
 
             // Detect quoted phrases and preserve them
             if (preg_match('/"([^"]+)"/', $queryText)) {
@@ -163,7 +209,7 @@ class QueryOptimizer
                 }
             }
 
-            $query['query'] = $queryText;
+            $query['query']['match']['value'] = $queryText;
         }
 
         return $query;
@@ -174,14 +220,16 @@ class QueryOptimizer
      */
     protected function addExactMatchBoost(array $query): array
     {
-        if (isset($query['query']) && is_string($query['query'])) {
-            // Add boost for exact matches
-            $query['boost'] = [
-                'exact_match' => $this->config['exact_match_boost'],
-                'phrase_match' => $this->config['phrase_boost'],
-                'fuzzy_match' => $this->config['fuzzy_match_boost'],
-            ];
+        if (!isset($query['query']) || !is_array($query['query'])) {
+            return $query;
         }
+
+        // Add boost configuration for different query types
+        $query['boost'] = [
+            'exact_match' => $this->config['exact_match_boost'],
+            'phrase_match' => $this->config['phrase_boost'],
+            'fuzzy_match' => $this->config['fuzzy_match_boost'],
+        ];
 
         return $query;
     }
@@ -191,8 +239,13 @@ class QueryOptimizer
      */
     protected function optimizeFilters(array $query): array
     {
-        if (isset($query['filter']) && is_array($query['filter'])) {
-            $filters = $query['filter'];
+        if (!isset($query['filter']) || !is_array($query['filter'])) {
+            return $query;
+        }
+
+        // Handle bool filter structure: {"filter": {"bool": {"must": [...]}}}
+        if (isset($query['filter']['bool']['must']) && is_array($query['filter']['bool']['must'])) {
+            $filters = $query['filter']['bool']['must'];
 
             // Sort filters by selectivity (more selective filters first)
             $optimizedFilters = $this->sortFiltersBySelectivity($filters);
@@ -200,7 +253,11 @@ class QueryOptimizer
             // Combine similar filters
             $optimizedFilters = $this->combineSimilarFilters($optimizedFilters);
 
-            $query['filter'] = $optimizedFilters;
+            $query['filter']['bool']['must'] = $optimizedFilters;
+        }
+        // Handle single filter: {"filter": {"term": {"field": "category", "value": "electronics"}}}
+        elseif (isset($query['filter']['term'])) {
+            // Single term filter, leave as is - no optimization needed
         }
 
         return $query;
@@ -256,12 +313,12 @@ class QueryOptimizer
         $termFilters = [];
 
         foreach ($filters as $filter) {
-            if (isset($filter['term'])) {
-                $field = array_keys($filter['term'])[0];
+            if (isset($filter['term']['field'], $filter['term']['value'])) {
+                $field = $filter['term']['field'];
                 if (!isset($termFilters[$field])) {
                     $termFilters[$field] = [];
                 }
-                $termFilters[$field][] = $filter['term'][$field];
+                $termFilters[$field][] = $filter['term']['value'];
             } else {
                 $combined[] = $filter;
             }
@@ -270,9 +327,19 @@ class QueryOptimizer
         // Convert multiple term filters on same field to terms filter
         foreach ($termFilters as $field => $values) {
             if (count($values) > 1) {
-                $combined[] = ['terms' => [$field => array_unique($values)]];
+                $combined[] = [
+                    'terms' => [
+                        'field' => $field,
+                        'values' => array_unique($values)
+                    ]
+                ];
             } else {
-                $combined[] = ['term' => [$field => $values[0]]];
+                $combined[] = [
+                    'term' => [
+                        'field' => $field,
+                        'value' => $values[0]
+                    ]
+                ];
             }
         }
 
@@ -284,7 +351,7 @@ class QueryOptimizer
      */
     protected function optimizeFieldWeights(array $query): array
     {
-        if (isset($query['fields'])) {
+        if (isset($query['fields']) && is_array($query['fields'])) {
             // Define default field weights based on importance
             $fieldWeights = [
                 'title' => 3.0,
@@ -294,14 +361,12 @@ class QueryOptimizer
                 'tags' => 1.2,
             ];
 
-            if (is_array($query['fields'])) {
-                $weightedFields = [];
-                foreach ($query['fields'] as $field) {
-                    $weight = $fieldWeights[$field] ?? 1.0;
-                    $weightedFields[] = $field . '^' . $weight;
-                }
-                $query['fields'] = $weightedFields;
+            $weightedFields = [];
+            foreach ($query['fields'] as $field) {
+                $weight = $fieldWeights[$field] ?? 1.0;
+                $weightedFields[] = $field . '^' . $weight;
             }
+            $query['fields'] = $weightedFields;
         }
 
         return $query;
@@ -312,14 +377,45 @@ class QueryOptimizer
      */
     protected function validateOptimizedQuery(array $query): array
     {
-        // Check query length
-        if (isset($query['query']) && strlen($query['query']) > $this->config['max_query_length']) {
-            $query['query'] = substr($query['query'], 0, $this->config['max_query_length']);
-        }
+        // Handle query structure validation
+        if (isset($query['query']) && is_array($query['query'])) {
+            // Handle match query validation
+            if (isset($query['query']['match']['value'])) {
+                $searchValue = $query['query']['match']['value'];
 
-        // Ensure query is not empty
-        if (isset($query['query']) && empty(trim($query['query']))) {
-            $query['query'] = '*';
+                // Check query length only if it's a string
+                if (is_string($searchValue) && strlen($searchValue) > $this->config['max_query_length']) {
+                    $query['query']['match']['value'] = substr($searchValue, 0, $this->config['max_query_length']);
+                }
+
+                // Ensure query value is not empty
+                if (is_string($searchValue) && empty(trim($searchValue))) {
+                    $query['query'] = ['match_all' => []];
+                }
+            }
+            // Handle wildcard query validation
+            elseif (isset($query['query']['wildcard']['value'])) {
+                $wildcardValue = $query['query']['wildcard']['value'];
+
+                if (is_string($wildcardValue) && strlen($wildcardValue) > $this->config['max_query_length']) {
+                    $query['query']['wildcard']['value'] = substr($wildcardValue, 0, $this->config['max_query_length']);
+                }
+
+                if (is_string($wildcardValue) && empty(trim($wildcardValue))) {
+                    $query['query'] = ['match_all' => []];
+                }
+            }
+            // Handle match_all query (no validation needed)
+            elseif (isset($query['query']['match_all'])) {
+                // match_all is always valid
+            }
+            // If no recognized query structure, default to match_all
+            else {
+                $query['query'] = ['match_all' => []];
+            }
+        } else {
+            // No valid query structure provided, default to match_all
+            $query['query'] = ['match_all' => []];
         }
 
         // Validate filter structure
@@ -335,6 +431,7 @@ class QueryOptimizer
      */
     protected function logOptimization(array $original, array $optimized): void
     {
+        // Only log in debug mode and if there were actual changes
         $debug = false;
         if (function_exists('config')) {
             try {
@@ -392,23 +489,43 @@ class QueryOptimizer
     {
         $score = 0;
 
-        // Query text complexity
-        if (isset($query['query']) && is_string($query['query'])) {
-            $wordCount = str_word_count($query['query']);
-            $score += $wordCount * 1;
+        // Analyze query structure complexity
+        if (isset($query['query']) && is_array($query['query'])) {
+            // Handle match query
+            if (isset($query['query']['match']['value']) && is_string($query['query']['match']['value'])) {
+                $queryText = $query['query']['match']['value'];
+                $wordCount = str_word_count($queryText);
+                $score += $wordCount * 1;
 
-            if (str_contains($query['query'], '*')) $score += 2;
-            if (str_contains($query['query'], '"')) $score += 1;
+                if (str_contains($queryText, '*')) $score += 2;
+                if (str_contains($queryText, '"')) $score += 1;
+            }
+            // Handle wildcard query
+            elseif (isset($query['query']['wildcard']['value']) && is_string($query['query']['wildcard']['value'])) {
+                $wildcardText = $query['query']['wildcard']['value'];
+                $score += 3; // Wildcards are more complex
+
+                if (substr_count($wildcardText, '*') > 2) $score += 2;
+                if (str_contains($wildcardText, '?')) $score += 1;
+            }
+            // match_all is simple
+            elseif (isset($query['query']['match_all'])) {
+                $score += 1;
+            }
         }
 
         // Filter complexity
-        if (isset($query['filter'])) {
-            $score += count($query['filter']) * 2;
+        if (isset($query['filter']) && is_array($query['filter'])) {
+            if (isset($query['filter']['bool']['must'])) {
+                $score += count($query['filter']['bool']['must']) * 2;
+            } else {
+                $score += 2; // Single filter
+            }
         }
 
         // Sorting complexity
         if (isset($query['sort'])) {
-            $score += count($query['sort']) * 1;
+            $score += 1;
         }
 
         if ($score <= 5) return 'low';
@@ -423,17 +540,36 @@ class QueryOptimizer
     {
         $recommendations = [];
 
-        if (isset($query['query']) && is_string($query['query'])) {
-            if (strlen($query['query']) > $this->config['performance_check_threshold']) {
-                $recommendations[] = 'Consider shortening the query for better performance';
-            }
+        // Analyze query structure for recommendations
+        if (isset($query['query']) && is_array($query['query'])) {
+            // Check match query
+            if (isset($query['query']['match']['value']) && is_string($query['query']['match']['value'])) {
+                $queryText = $query['query']['match']['value'];
 
-            if (substr_count($query['query'], '*') > 3) {
-                $recommendations[] = 'Too many wildcards may impact performance';
+                if (strlen($queryText) > $this->config['performance_check_threshold']) {
+                    $recommendations[] = 'Consider shortening the query for better performance';
+                }
+
+                if (substr_count($queryText, '*') > 3) {
+                    $recommendations[] = 'Too many wildcards may impact performance';
+                }
+            }
+            // Check wildcard query
+            elseif (isset($query['query']['wildcard']['value']) && is_string($query['query']['wildcard']['value'])) {
+                $wildcardText = $query['query']['wildcard']['value'];
+
+                if (substr_count($wildcardText, '*') > 2) {
+                    $recommendations[] = 'Multiple wildcards in pattern may slow down searches';
+                }
+
+                if (strpos($wildcardText, '*') === 0) {
+                    $recommendations[] = 'Leading wildcards are slower - consider using different query approach';
+                }
             }
         }
 
-        if (isset($query['filter']) && count($query['filter']) > 10) {
+        // Check filter complexity
+        if (isset($query['filter']['bool']['must']) && count($query['filter']['bool']['must']) > 10) {
             $recommendations[] = 'Consider reducing the number of filters';
         }
 

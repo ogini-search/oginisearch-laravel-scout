@@ -236,7 +236,8 @@ class OginiClient
     public function deleteByQuery(string $indexName, array $query): array
     {
         $payload = ['query' => $query];
-        return $this->request('DELETE', "/api/indices/{$indexName}/documents/_query", $payload);
+        // Force JSON body for DELETE requests with payload
+        return $this->request('DELETE', "/api/indices/{$indexName}/documents/_query", $payload, ['force_json' => true]);
     }
 
     /**
@@ -390,7 +391,13 @@ class OginiClient
             // Handle request data based on method
             if (in_array(strtoupper($method), ['GET', 'DELETE'])) {
                 if (!empty($data)) {
-                    $defaultOptions['query'] = $data;
+                    // Use JSON body for DELETE with force_json option
+                    if (strtoupper($method) === 'DELETE' && isset($options['force_json'])) {
+                        $defaultOptions['json'] = $data;
+                        unset($options['force_json']); // Remove from options to avoid passing to Guzzle
+                    } else {
+                        $defaultOptions['query'] = $data;
+                    }
                 }
             } else {
                 if (!empty($data)) {

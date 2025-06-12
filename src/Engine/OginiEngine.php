@@ -223,11 +223,14 @@ class OginiEngine extends Engine
      */
     public function map(Builder $builder, $results, $model): Collection
     {
-        if (!isset($results['data']['hits']) || empty($results['data']['hits'])) {
+        // Handle API response format: {"hits": {"total": 5, "hits": [...]}}
+        $hits = $this->extractHitsFromResponse($results);
+
+        if (empty($hits)) {
             return $model->newCollection();
         }
 
-        $objectIds = collect($results['data']['hits'])->pluck('id')->values()->all();
+        $objectIds = collect($hits)->pluck('id')->values()->all();
         $objectIdPositions = array_flip($objectIds);
 
         return $model->getScoutModelsByIds(
@@ -250,11 +253,14 @@ class OginiEngine extends Engine
      */
     public function lazyMap(Builder $builder, $results, $model): LazyCollection
     {
-        if (!isset($results['data']['hits']) || empty($results['data']['hits'])) {
+        // Handle API response format: {"hits": {"total": 5, "hits": [...]}}
+        $hits = $this->extractHitsFromResponse($results);
+
+        if (empty($hits)) {
             return LazyCollection::make($model->newCollection());
         }
 
-        $objectIds = collect($results['data']['hits'])->pluck('id')->values()->all();
+        $objectIds = collect($hits)->pluck('id')->values()->all();
         $objectIdPositions = array_flip($objectIds);
 
         return $model->queryScoutModelsByIds(
@@ -337,6 +343,12 @@ class OginiEngine extends Engine
      */
     public function getTotalCount($results): int
     {
+        // Handle API response format: {"hits": {"total": 5, "hits": [...]}}
+        if (isset($results['hits']['total'])) {
+            return (int) $results['hits']['total'];
+        }
+
+        // Fallback to legacy format
         return $results['data']['total'] ?? 0;
     }
 
@@ -350,12 +362,9 @@ class OginiEngine extends Engine
     public function keys(Builder $builder): BaseCollection
     {
         $results = $this->search($builder);
+        $hits = $this->extractHitsFromResponse($results);
 
-        if (!isset($results['data']['hits'])) {
-            return collect();
-        }
-
-        return collect($results['data']['hits'])->pluck('id');
+        return collect($hits)->pluck('id');
     }
 
     /**
@@ -366,11 +375,29 @@ class OginiEngine extends Engine
      */
     public function mapIds($results): BaseCollection
     {
-        if (!isset($results['data']['hits'])) {
-            return collect();
+        $hits = $this->extractHitsFromResponse($results);
+        return collect($hits)->pluck('id')->values();
+    }
+
+    /**
+     * Extract hits array from API response, handling both current and legacy formats.
+     *
+     * @param array $results
+     * @return array
+     */
+    protected function extractHitsFromResponse(array $results): array
+    {
+        // Handle current API response format: {"hits": {"total": 5, "hits": [...]}}
+        if (isset($results['hits']['hits']) && is_array($results['hits']['hits'])) {
+            return $results['hits']['hits'];
         }
 
-        return collect($results['data']['hits'])->pluck('id')->values();
+        // Handle legacy format: {"data": {"total": 5, "hits": [...]}}
+        if (isset($results['data']['hits']) && is_array($results['data']['hits'])) {
+            return $results['data']['hits'];
+        }
+
+        return [];
     }
 
     /**
