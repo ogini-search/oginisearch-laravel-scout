@@ -125,47 +125,54 @@ class BulkImportCommand extends Command
         $chunkSize = (int) $this->option('chunk-size');
         $startTime = microtime(true);
 
-        $modelClass::query()
-            ->when($offset > 0, function ($query) use ($offset) {
-                return $query->offset($offset);
-            })
-            ->when($limit > 0, function ($query) use ($limit) {
-                return $query->limit($limit);
-            })
-            ->chunk($chunkSize, function ($models) use (
-                &$processed,
-                &$successCount,
-                &$errorCount,
-                &$progressBar,
-                $recordsToProcess
-            ) {
-                if ($processed >= $recordsToProcess) {
-                    return false;
-                }
+        // Use chunkById for better performance with offset handling
+        $query = $modelClass::query();
 
-                $batchModels = $models->take($recordsToProcess - $processed);
+        // If we have an offset, find the starting ID
+        if ($offset > 0) {
+            $startingRecord = $modelClass::query()->offset($offset)->first();
+            if ($startingRecord) {
+                $query = $query->where($startingRecord->getKeyName(), '>=', $startingRecord->getKey());
+            } else {
+                // No records at this offset
+                return 0;
+            }
+        }
 
-                if (!$this->option('dry-run')) {
-                    try {
-                        // Use Scout's bulk processing
-                        $batchModels->searchable();
-                        $successCount += $batchModels->count();
-                    } catch (Exception $e) {
-                        $this->newLine();
-                        $this->error("   ❌ Error processing batch: " . $e->getMessage());
-                        $errorCount += $batchModels->count();
-                    }
-                } else {
+        $query->chunkById($chunkSize, function ($models) use (
+            &$processed,
+            &$successCount,
+            &$errorCount,
+            &$progressBar,
+            $recordsToProcess
+        ) {
+            if ($processed >= $recordsToProcess) {
+                return false;
+            }
+
+            $batchModels = $models->take($recordsToProcess - $processed);
+
+            if (!$this->option('dry-run')) {
+                try {
+                    // Use Scout's bulk processing
+                    $batchModels->searchable();
                     $successCount += $batchModels->count();
+                } catch (Exception $e) {
+                    $this->newLine();
+                    $this->error("   ❌ Error processing batch: " . $e->getMessage());
+                    $errorCount += $batchModels->count();
                 }
+            } else {
+                $successCount += $batchModels->count();
+            }
 
-                $processed += $batchModels->count();
-                $progressBar->advance($batchModels->count());
+            $processed += $batchModels->count();
+            $progressBar->advance($batchModels->count());
 
-                if ($processed >= $recordsToProcess) {
-                    return false;
-                }
-            });
+            if ($processed >= $recordsToProcess) {
+                return false;
+            }
+        });
 
         $progressBar->finish();
         $this->newLine();
@@ -220,21 +227,45 @@ class BulkImportCommand extends Command
 
         $jobsDispatched = 0;
 
-        $modelClass::query()
-            ->when($offset > 0, function ($query) use ($offset) {
-                return $query->offset($offset);
-            })
-            ->when($limit > 0, function ($query) use ($limit) {
-                return $query->limit($limit);
-            })
-            ->chunk($chunkSize, function ($models) use (&$jobsDispatched, $modelClass) {
-                BulkScoutImportJob::dispatch(
-                    $models->pluck('id')->toArray(),
-                    $modelClass,
-                    (int) $this->option('batch-size')
-                );
-                $jobsDispatched++;
-            });
+        // Use chunkById for better performance with offset handling
+        $query = $modelClass::query();
+        $processed = 0;
+
+        // If we have an offset, find the starting ID
+        if ($offset > 0) {
+            $startingRecord = $modelClass::query()->offset($offset)->first();
+            if ($startingRecord) {
+                $query = $query->where($startingRecord->getKeyName(), '>=', $startingRecord->getKey());
+            } else {
+                // No records at this offset
+                return 0;
+            }
+        }
+
+        $query->chunkById($chunkSize, function ($models) use (
+            &$jobsDispatched,
+            &$processed,
+            $modelClass,
+            $recordsToProcess
+        ) {
+            if ($processed >= $recordsToProcess) {
+                return false;
+            }
+
+            $batchModels = $models->take($recordsToProcess - $processed);
+
+            BulkScoutImportJob::dispatch(
+                $batchModels->pluck('id')->toArray(),
+                $modelClass,
+                (int) $this->option('batch-size')
+            );
+            $jobsDispatched++;
+            $processed += $batchModels->count();
+
+            if ($processed >= $recordsToProcess) {
+                return false;
+            }
+        });
 
         $this->info("✅ Dispatched {$jobsDispatched} bulk import jobs to queue");
         $this->line("   Run: php artisan queue:work --timeout=600 to process them");
