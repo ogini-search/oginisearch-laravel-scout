@@ -170,8 +170,15 @@ class BulkImportCommand extends Command
         $progressBar->finish();
         $this->newLine();
 
-        $duration = round(microtime(true) - $startTime, 2);
-        $throughput = $processed > 0 ? round($processed / $duration, 2) : 0;
+        $rawDuration = microtime(true) - $startTime;
+        $duration = round($rawDuration, 2);
+
+        // Calculate throughput with protection against division by zero
+        if ($processed > 0 && $rawDuration > 0) {
+            $throughput = round($processed / $rawDuration, 2);
+        } else {
+            $throughput = 0;
+        }
 
         $this->info("✅ Import completed!");
         $this->info("📈 Results:");
@@ -179,7 +186,11 @@ class BulkImportCommand extends Command
         $this->info("   - Successful: {$successCount}");
         $this->info("   - Errors: {$errorCount}");
         $this->info("   - Duration: {$duration} seconds");
-        $this->info("   - Throughput: {$throughput} docs/second");
+        if ($throughput > 0) {
+            $this->info("   - Throughput: {$throughput} docs/second");
+        } else {
+            $this->info("   - Throughput: N/A (too fast to measure)");
+        }
 
         return $errorCount > 0 ? 1 : 0;
     }
