@@ -244,14 +244,22 @@ class OginiClient
      * List documents in an index.
      *
      * @param string $indexName The index name
-     * @param int $limit Number of documents to return
-     * @param int $offset Starting offset
+     * @param int|string $limit Number of documents to return
+     * @param int|string $offset Starting offset
      * @param string|null $filter Optional filter
      * @return array Response data
      * @throws OginiException
      */
-    public function listDocuments(string $indexName, int $limit = 10, int $offset = 0, ?string $filter = null): array
+    public function listDocuments(string $indexName, int|string $limit = 10, int|string $offset = 0, ?string $filter = null): array
     {
+        // Automatically cast string parameters to integers for Laravel compatibility
+        $limit = (int) $limit;
+        $offset = (int) $offset;
+
+        // Ensure minimum values
+        $limit = max(1, $limit);
+        $offset = max(0, $offset);
+
         $params = [
             'limit' => $limit,
             'offset' => $offset,
@@ -306,14 +314,14 @@ class OginiClient
             }
         }
 
-        // Add size if provided
+        // Add size if provided (with automatic type casting)
         if (isset($options['size'])) {
-            $payload['size'] = $options['size'];
+            $payload['size'] = max(1, (int) $options['size']);
         }
 
-        // Add from (offset) if provided
+        // Add from (offset) if provided (with automatic type casting)
         if (isset($options['from'])) {
-            $payload['from'] = $options['from'];
+            $payload['from'] = max(0, (int) $options['from']);
         }
 
         // Add other search options (filters, sort, fields, facets, highlight, etc.)
@@ -340,12 +348,12 @@ class OginiClient
     {
         $payload = $queryStructure;
 
-        // Add size and from if provided in options
+        // Add size and from if provided in options (with automatic type casting)
         if (isset($options['size'])) {
-            $payload['size'] = $options['size'];
+            $payload['size'] = max(1, (int) $options['size']);
         }
         if (isset($options['from'])) {
-            $payload['from'] = $options['from'];
+            $payload['from'] = max(0, (int) $options['from']);
         }
 
         return $this->request('POST', "/api/indices/{$indexName}/_search", $payload);
@@ -357,18 +365,19 @@ class OginiClient
      * @param string $indexName The index name
      * @param string $text Text to get suggestions for
      * @param string|null $field Field to get suggestions from
-     * @param int|null $size Number of suggestions to return
+     * @param int|string|null $size Number of suggestions to return
      * @return array Suggestions
      * @throws OginiException
      */
-    public function suggest(string $indexName, string $text, ?string $field = null, ?int $size = null): array
+    public function suggest(string $indexName, string $text, ?string $field = null, int|string|null $size = null): array
     {
         $payload = ['text' => $text];
         if ($field !== null) {
             $payload['field'] = $field;
         }
         if ($size !== null) {
-            $payload['size'] = $size;
+            // Automatically cast string parameters to integers for Laravel compatibility
+            $payload['size'] = max(1, (int) $size);
         }
         return $this->request('POST', "/api/indices/{$indexName}/_search/_suggest", $payload);
     }

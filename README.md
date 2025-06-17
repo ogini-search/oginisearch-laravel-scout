@@ -151,6 +151,70 @@ $articles = Article::search('laravel scout')
     ->paginate(15);
 ```
 
+### Enhanced Laravel Integration
+
+The package provides seamless Laravel request integration with automatic type casting for pagination parameters.
+
+#### Automatic Type Casting
+
+All pagination parameters automatically handle both integer and string values:
+
+```php
+// In your controller - no manual casting needed!
+public function search(Request $request)
+{
+    $validated = $request->validate([
+        'query' => 'required|string',
+        'per_page' => 'integer|min:1|max:100',
+        'page' => 'integer|min:1',
+    ]);
+    
+    // These work directly without (int) casting:
+    return Article::search($validated['query'])
+        ->paginate(
+            $validated['per_page'] ?? 15,  // No need for (int) casting!
+            'page',
+            $validated['page'] ?? 1
+        );
+}
+
+// Direct client usage also supports strings
+use OginiScoutDriver\Facades\Ogini;
+
+$results = Ogini::search('articles', 'query', [
+    'size' => $request->get('per_page', '15'),    // String works!
+    'from' => $request->get('offset', '0'),       // String works!
+]);
+```
+
+#### Laravel Request Validation Benefits
+
+This enhancement eliminates common integration issues:
+
+```php
+// Before v1.0.7 - Required manual casting
+->paginate((int) $request->validated('per_page', 15))
+
+// After v1.0.7 - Works directly
+->paginate($request->validated('per_page', 15))
+
+// Validation rules work seamlessly
+$request->validate([
+    'per_page' => 'integer|between:1,100',  // Laravel returns string
+    'page' => 'integer|min:1',              // Automatically handled
+]);
+```
+
+#### Supported Parameters
+
+All pagination-related parameters support automatic string-to-integer conversion:
+- `per_page`, `perPage` - Results per page (minimum: 1)
+- `page` - Page number (minimum: 1)  
+- `size` - Result size (minimum: 1)
+- `from`, `offset` - Starting offset (minimum: 0)
+
+Invalid values are automatically corrected to sensible minimums.
+
 ## Advanced Features
 
 ### 1. Dynamic Model Discovery & Bulk Processing
@@ -170,6 +234,10 @@ php artisan ogini:bulk-import User --limit=1000 --batch-size=500
 
 # Queue the import for large datasets
 php artisan ogini:bulk-import Product --queue --batch-size=200
+
+# Import with pagination support for large datasets
+php artisan ogini:bulk-import User --limit=1000 --offset=0
+php artisan ogini:bulk-import User --limit=1000 --offset=1000
 
 # Validate model before import
 php artisan ogini:bulk-import Article --validate

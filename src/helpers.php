@@ -359,11 +359,11 @@ if (!function_exists('ogini_build_pagination')) {
      * Build pagination metadata from search results.
      *
      * @param array $results
-     * @param int $currentPage
-     * @param int $perPage
+     * @param int|string $currentPage
+     * @param int|string $perPage
      * @return array
      */
-    function ogini_build_pagination(array $results, int $currentPage = 1, int $perPage = 15): array
+    function ogini_build_pagination(array $results, int|string $currentPage = 1, int|string $perPage = 15): array
     {
         return UtilityHelpers::buildPagination($results, $currentPage, $perPage);
     }

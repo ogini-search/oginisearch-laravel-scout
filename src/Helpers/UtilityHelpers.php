@@ -132,12 +132,20 @@ class UtilityHelpers
      * Build pagination metadata from search results.
      *
      * @param array $results
-     * @param int $currentPage
-     * @param int $perPage
+     * @param int|string $currentPage
+     * @param int|string $perPage
      * @return array
      */
-    public static function buildPagination(array $results, int $currentPage = 1, int $perPage = 15): array
+    public static function buildPagination(array $results, int|string $currentPage = 1, int|string $perPage = 15): array
     {
+        // Automatically cast string parameters to integers for Laravel compatibility
+        $currentPage = (int) $currentPage;
+        $perPage = (int) $perPage;
+
+        // Ensure minimum values
+        $currentPage = max(1, $currentPage);
+        $perPage = max(1, $perPage);
+
         $total = $results['total'] ?? 0;
         $totalPages = ceil($total / $perPage);
 

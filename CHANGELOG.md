@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2025-06-17
+
+### 🎯 Enhanced Laravel Integration
+
+#### Added
+- **Automatic Type Casting for Pagination Parameters**: All pagination parameters (`per_page`, `page`, `size`, `from`, `offset`) now automatically cast string values to integers
+- **Enhanced Parameter Flexibility**: Methods now accept both `int|string` types for pagination parameters, making Laravel request validation seamless
+- **Improved Developer Experience**: No more manual casting required - use `$request->validated('per_page', 15)` directly instead of `(int) $request->validated('per_page', 15)`
+- **Robust Edge Case Handling**: Automatic minimum value enforcement (perPage/size ≥ 1, page/offset ≥ 0) and graceful handling of invalid inputs
+- **Bulk Import Offset Flag**: Added `--offset` option to `ogini:bulk-import` command for pagination support in large dataset imports
+
+#### Enhanced
+- **OginiEngine::paginate()**: Now accepts `int|string` parameters with automatic type casting and validation
+- **OginiClient Methods**: Enhanced `listDocuments()`, `search()`, `advancedSearch()`, and `suggest()` with flexible parameter types
+- **UtilityHelpers::buildPagination()**: Improved with type casting and minimum value enforcement
+- **Global Helper Functions**: Updated `ogini_build_pagination()` function signature for consistency
+
+#### Fixed
+- **Laravel Request Integration**: Eliminates type errors when using Laravel request validation with string parameters
+- **Parameter Validation**: Prevents negative values and enforces sensible minimum values for pagination
+- **Type Safety**: Maintains backward compatibility while adding flexibility for Laravel integration
+
+#### Technical Improvements
+- **Laravel-Friendly API**: Follows Laravel's convention of flexible parameter handling
+- **Backward Compatibility**: Existing integer parameter usage continues to work unchanged
+- **Production Ready**: Reduces debugging time and common integration errors in Laravel applications
+
+### Notes
+- **Zero Breaking Changes**: All existing code continues to work without modification
+- **Laravel Best Practices**: Aligns with Laravel's flexible request handling patterns
+- Makes the package more Laravel-friendly and reduces common integration friction
+
 ## [1.0.6] - 2025-06-12
 
 ### 🚨 CRITICAL BUG FIXES

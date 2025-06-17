@@ -14,6 +14,7 @@ class BulkImportCommand extends Command
                            {model? : Model class to import (optional - shows available models if not provided)}
                            {--list : List all available searchable models}
                            {--limit=0 : Maximum records to import (0 = all)}
+                           {--offset=0 : Number of records to skip before starting import}
                            {--batch-size=500 : Documents per bulk API call}
                            {--chunk-size=1000 : Records per database query}
                            {--queue : Process via queue instead of immediate}
@@ -21,7 +22,7 @@ class BulkImportCommand extends Command
                            {--dry-run : Test without actual indexing}
                            {--validate : Validate model configuration}';
 
-    protected $description = 'Efficiently import models to OginiSearch using bulk operations';
+    protected $description = 'Efficiently import models to OginiSearch using bulk operations with pagination support';
 
     protected ModelDiscoveryService $modelDiscovery;
 
@@ -99,9 +100,21 @@ class BulkImportCommand extends Command
     {
         $totalCount = $modelClass::count();
         $limit = (int) $this->option('limit');
-        $recordsToProcess = $limit > 0 ? min($limit, $totalCount) : $totalCount;
+        $offset = (int) $this->option('offset');
 
-        $this->info("📊 Processing {$recordsToProcess} records");
+        // Calculate available records after offset
+        $availableRecords = max(0, $totalCount - $offset);
+        $recordsToProcess = $limit > 0 ? min($limit, $availableRecords) : $availableRecords;
+
+        if ($offset > 0) {
+            $this->info("📊 Starting from record #{$offset} (skipping first {$offset} records)");
+        }
+        $this->info("📊 Processing {$recordsToProcess} records (total available: {$totalCount})");
+
+        if ($recordsToProcess <= 0) {
+            $this->warn("⚠️  No records to process. Offset ({$offset}) may be too large or no records exist.");
+            return 0;
+        }
 
         $progressBar = $this->output->createProgressBar($recordsToProcess);
         $progressBar->start();
@@ -113,6 +126,9 @@ class BulkImportCommand extends Command
         $startTime = microtime(true);
 
         $modelClass::query()
+            ->when($offset > 0, function ($query) use ($offset) {
+                return $query->offset($offset);
+            })
             ->when($limit > 0, function ($query) use ($limit) {
                 return $query->limit($limit);
             })
@@ -174,11 +190,29 @@ class BulkImportCommand extends Command
 
         $totalCount = $modelClass::count();
         $limit = (int) $this->option('limit');
+        $offset = (int) $this->option('offset');
         $chunkSize = (int) $this->option('chunk-size');
+
+        // Calculate available records after offset
+        $availableRecords = max(0, $totalCount - $offset);
+        $recordsToProcess = $limit > 0 ? min($limit, $availableRecords) : $availableRecords;
+
+        if ($offset > 0) {
+            $this->info("📊 Starting from record #{$offset} (skipping first {$offset} records)");
+        }
+        $this->info("📊 Will queue jobs for {$recordsToProcess} records (total available: {$totalCount})");
+
+        if ($recordsToProcess <= 0) {
+            $this->warn("⚠️  No records to process. Offset ({$offset}) may be too large or no records exist.");
+            return 0;
+        }
 
         $jobsDispatched = 0;
 
         $modelClass::query()
+            ->when($offset > 0, function ($query) use ($offset) {
+                return $query->offset($offset);
+            })
             ->when($limit > 0, function ($query) use ($limit) {
                 return $query->limit($limit);
             })
@@ -271,6 +305,8 @@ class BulkImportCommand extends Command
         $this->newLine();
         $this->line("💡 Usage: php artisan ogini:bulk-import <model>");
         $this->line("   Example: php artisan ogini:bulk-import User");
+        $this->line("   With pagination: php artisan ogini:bulk-import User --limit=1000 --offset=0");
+        $this->line("   Next batch: php artisan ogini:bulk-import User --limit=1000 --offset=1000");
         $this->line("   Use --list for detailed information");
 
         return 0;

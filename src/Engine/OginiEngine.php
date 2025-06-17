@@ -201,13 +201,21 @@ class OginiEngine extends Engine
      * Perform the given search on the engine for pagination.
      *
      * @param Builder $builder
-     * @param int $perPage
-     * @param int $page
+     * @param int|string $perPage
+     * @param int|string $page
      * @return mixed
      * @throws OginiException
      */
     public function paginate(Builder $builder, $perPage, $page)
     {
+        // Automatically cast string parameters to integers for Laravel compatibility
+        $perPage = (int) $perPage;
+        $page = (int) $page;
+
+        // Ensure minimum values
+        $perPage = max(1, $perPage);
+        $page = max(1, $page);
+
         return $this->performSearch($builder, [
             'size' => $perPage,
             'from' => ($page - 1) * $perPage,
@@ -614,11 +622,11 @@ class OginiEngine extends Engine
      * @param string $indexName
      * @param string $text
      * @param string|null $field
-     * @param int $size
+     * @param int|string $size
      * @return array
      * @throws OginiException
      */
-    public function getSuggestions(string $indexName, string $text, ?string $field = null, int $size = 5): array
+    public function getSuggestions(string $indexName, string $text, ?string $field = null, int|string $size = 5): array
     {
         return $this->client->suggest($indexName, $text, $field, $size);
     }
