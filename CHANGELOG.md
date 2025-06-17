@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.9] - 2025-01-07
+
+### 🔧 Performance & Functionality Improvements
+
+#### Fixed
+- **--offset Flag Functionality**: Fixed `--offset` parameter in `ogini:bulk-import` command that was being ignored due to Laravel's `chunk()` method limitations
+- **Hybrid Chunking Strategy**: Replaced `chunk()` with `chunkById()` for proper offset handling while maintaining high performance
+- **ID-Based Pagination**: Implemented efficient ID-based pagination instead of expensive OFFSET operations
+
+#### Enhanced
+- **Performance Optimization**: Maintains chunking performance while ensuring offset works correctly
+- **Memory Efficiency**: Uses cursor-based pagination for better memory management with large datasets
+- **Database Efficiency**: Avoids expensive OFFSET operations on large tables by using WHERE conditions with primary keys
+
+#### Technical Improvements
+- **Smart Offset Handling**: Finds starting record ID and uses `WHERE id >= startingId` for efficient chunking
+- **Dual Mode Support**: Fixed offset functionality for both immediate and queue processing modes
+- **Accurate Pagination**: Properly respects both `--offset` and `--limit` parameters simultaneously
+
+### Notes
+- **Critical Fix**: Resolves offset parameter being completely ignored in bulk import operations
+- **Performance Maintained**: No performance degradation compared to previous chunking approach
+- **Production Ready**: Tested with large datasets to ensure efficiency and accuracy
+
 ## [1.0.8] - 2025-01-07
 
 ### 🐛 Bug Fixes
