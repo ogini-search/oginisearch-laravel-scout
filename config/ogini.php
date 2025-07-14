@@ -40,7 +40,7 @@ return [
     */
 
     'client' => [
-        'timeout' => env('OGINI_TIMEOUT', 30),
+        'timeout' => env('OGINI_TIMEOUT', 1800), // 30 minutes for large datasets
         'retry_attempts' => env('OGINI_RETRY_ATTEMPTS', 3),
         'retry_delay' => env('OGINI_RETRY_DELAY', 100), // milliseconds
     ],
@@ -85,7 +85,7 @@ return [
         'batch' => [
             'enabled' => env('OGINI_BATCH_ENABLED', true),
             'batch_size' => env('OGINI_BATCH_SIZE', 500),
-            'timeout' => env('OGINI_BATCH_TIMEOUT', 120),
+            'timeout' => env('OGINI_BATCH_TIMEOUT', 1800), // 30 minutes for large datasets
             'retry_attempts' => env('OGINI_BATCH_RETRY_ATTEMPTS', 3),
             'delay_between_batches' => env('OGINI_BATCH_DELAY', 100), // milliseconds
         ],
@@ -102,8 +102,8 @@ return [
         'connection_pool' => [
             'enabled' => env('OGINI_POOL_ENABLED', true),
             'pool_size' => env('OGINI_POOL_SIZE', 5),
-            'connection_timeout' => env('OGINI_POOL_CONNECTION_TIMEOUT', 10),
-            'request_timeout' => env('OGINI_POOL_REQUEST_TIMEOUT', 30),
+            'connection_timeout' => env('OGINI_POOL_CONNECTION_TIMEOUT', 60), // 1 minute for large datasets
+            'request_timeout' => env('OGINI_POOL_REQUEST_TIMEOUT', 600), // 10 minutes for large datasets
             'keep_alive_timeout' => env('OGINI_POOL_KEEP_ALIVE_TIMEOUT', 60),
             'max_idle_time' => env('OGINI_POOL_MAX_IDLE_TIME', 300),
             'enable_connection_reuse' => env('OGINI_POOL_REUSE_ENABLED', true),

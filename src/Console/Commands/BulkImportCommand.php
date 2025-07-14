@@ -80,7 +80,7 @@ class BulkImportCommand extends Command
     private function testConnection(): bool
     {
         try {
-            $config = config('oginisearch');
+            $config = config('ogini');
             $baseUrl = $config['base_url'] ?? 'http://localhost:3000';
             $response = Http::timeout(5)->get("{$baseUrl}/health");
 

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-01-07
+
+### 🚀 Enhanced Timeout Configuration for Large Datasets
+
+#### Added
+- **Robust Timeout Settings**: Enhanced configuration for handling large dataset operations with production-ready timeout values
+- **Client Timeout**: Increased to 1800 seconds (30 minutes) for large dataset operations
+- **Batch Timeout**: Set to 1800 seconds (30 minutes) for comprehensive batch processing
+- **Connection Pool Request Timeout**: Increased to 600 seconds (10 minutes) for sustained operations
+- **Connection Timeout**: Set to 60 seconds (1 minute) for initial connection establishment
+
+#### Enhanced
+- **Large Dataset Support**: Optimized timeout configuration for processing millions of records
+- **Production Reliability**: Prevents timeout failures during bulk import operations
+- **Environment Variable Patterns**: Maintains backward compatibility with existing environment variable patterns
+- **Configuration Flexibility**: All timeout values can be customized via environment variables
+
+#### Technical Improvements
+- **Performance Optimization**: Timeout values specifically tuned for large dataset operations
+- **Memory Management**: Enhanced connection pooling settings for sustained high-load operations
+- **Error Prevention**: Reduces timeout-related failures in production environments
+- **Scalability**: Supports enterprise-level data processing requirements
+
+### Notes
+- **Production Ready**: Timeout values optimized for real-world large dataset scenarios
+- **Backward Compatible**: All existing configurations continue to work unchanged
+- **Environment Configurable**: All timeout values can be overridden via environment variables
+- **Enterprise Grade**: Supports processing datasets with millions of records
+
 ## [1.0.9] - 2025-01-07
 
 ### 🔧 Performance & Functionality Improvements
