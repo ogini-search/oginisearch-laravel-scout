@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - 2025-01-07
+## [1.1.1] - 2024-12-19
+
+### Fixed
+- **Pagination Compatibility**: Enhanced paginate function to properly format data for Laravel Scout compatibility
+- **Data Mapping**: Improved map function to handle LengthAwarePaginator instances and prevent double-processing
+- **Scout Integration**: Ensured paginated results return proper model instances instead of raw API data
+
+## [1.1.0] - 2024-12-19
+
+### Enhanced
+- **Timeout Configuration**: Updated default timeouts for better handling of large datasets
+  - Client timeout increased to 1800 seconds (30 minutes)
+  - Batch timeout increased to 1800 seconds (30 minutes) 
+  - Connection pool request timeout increased to 600 seconds (10 minutes)
+  - Connection timeout set to 60 seconds
+- **Environment Variables**: All timeout values can be configured via environment variables for flexibility
 
 ### 🚀 Enhanced Timeout Configuration for Large Datasets
 

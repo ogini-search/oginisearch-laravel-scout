@@ -216,10 +216,24 @@ class OginiEngine extends Engine
         $perPage = max(1, $perPage);
         $page = max(1, $page);
 
-        return $this->performSearch($builder, [
+        $results = $this->performSearch($builder, [
             'size' => $perPage,
             'from' => ($page - 1) * $perPage,
         ]);
+
+        // Extract hits and map to models
+        $hits = $this->extractHitsFromResponse($results);
+        $models = $this->map($builder, $results, $builder->model);
+        $total = $this->getTotalCount($results);
+
+        // Return a LengthAwarePaginator of mapped models
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $models,
+            $total,
+            $perPage,
+            $page,
+            ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()]
+        );
     }
 
     /**
@@ -231,6 +245,11 @@ class OginiEngine extends Engine
      */
     public function map(Builder $builder, $results, $model): Collection
     {
+        // If results is already a LengthAwarePaginator (from our paginate method), return the items
+        if ($results instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            return $results->getCollection();
+        }
+
         // Handle API response format: {"hits": {"total": 5, "hits": [...]}}
         $hits = $this->extractHitsFromResponse($results);
 
