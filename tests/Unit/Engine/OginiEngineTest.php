@@ -213,9 +213,16 @@ class OginiEngineTest extends TestCase
             ->with('test_index', 'test query', Mockery::type('array')) // Page 2, 10 per page
             ->andReturn($searchResults);
 
+        // Mock the model methods needed for pagination
+        $this->mockModel->shouldReceive('getScoutModelsByIds')
+            ->andReturn(new Collection());
+
         $result = $this->engine->paginate($builder, 10, 2);
 
-        $this->assertEquals($searchResults, $result);
+        $this->assertInstanceOf(\OginiScoutDriver\Pagination\OginiPaginator::class, $result);
+        $this->assertEquals(25, $result->total());
+        $this->assertEquals(10, $result->perPage());
+        $this->assertEquals(2, $result->currentPage());
     }
 
     // Map Tests
@@ -225,7 +232,7 @@ class OginiEngineTest extends TestCase
         $builder = Mockery::mock(Builder::class);
 
         $results = [
-            'data' => [
+            'hits' => [
                 'hits' => [
                     ['id' => '1', 'source' => ['title' => 'First']],
                     ['id' => '2', 'source' => ['title' => 'Second']]
@@ -235,9 +242,11 @@ class OginiEngineTest extends TestCase
 
         $model1 = Mockery::mock(Model::class);
         $model1->shouldReceive('getScoutKey')->andReturn('1');
+        $model1->shouldReceive('toArray')->andReturn(['id' => '1', 'title' => 'First']);
 
         $model2 = Mockery::mock(Model::class);
         $model2->shouldReceive('getScoutKey')->andReturn('2');
+        $model2->shouldReceive('toArray')->andReturn(['id' => '2', 'title' => 'Second']);
 
         $modelCollection = new Collection([$model1, $model2]);
 
@@ -257,7 +266,7 @@ class OginiEngineTest extends TestCase
     public function testMapWithEmptyResults(): void
     {
         $builder = Mockery::mock(Builder::class);
-        $results = ['data' => ['hits' => []]];
+        $results = ['hits' => ['hits' => []]];
 
         $emptyCollection = new Collection();
         $this->mockModel->shouldReceive('newCollection')->andReturn($emptyCollection);

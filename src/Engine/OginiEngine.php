@@ -16,6 +16,7 @@ use OginiScoutDriver\Performance\BatchProcessor;
 use OginiScoutDriver\Performance\QueryCache;
 use OginiScoutDriver\Performance\ConnectionPool;
 use OginiScoutDriver\Performance\QueryOptimizer;
+use OginiScoutDriver\Pagination\OginiPaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as BaseCollection;
@@ -186,7 +187,7 @@ class OginiEngine extends Engine
      * Perform the given search on the engine.
      *
      * @param Builder $builder
-     * @return mixed
+     * @return array
      * @throws OginiException
      */
     public function search(Builder $builder)
@@ -203,7 +204,7 @@ class OginiEngine extends Engine
      * @param Builder $builder
      * @param int|string $perPage
      * @param int|string $page
-     * @return mixed
+     * @return \OginiScoutDriver\Pagination\OginiPaginator
      * @throws OginiException
      */
     public function paginate(Builder $builder, $perPage, $page)
@@ -226,14 +227,26 @@ class OginiEngine extends Engine
         $models = $this->map($builder, $results, $builder->model);
         $total = $this->getTotalCount($results);
 
-        // Return a LengthAwarePaginator of mapped models
-        return new \Illuminate\Pagination\LengthAwarePaginator(
+        // Extract enhanced metadata from results
+        $oginiPagination = $this->extractOginiPagination($results, $page, $perPage, $total);
+        $searchTime = $this->extractSearchTime($results);
+        $maxScore = $this->extractMaxScore($results);
+
+        // Return enhanced OginiPaginator with metadata
+        $paginator = new OginiPaginator(
             $models,
             $total,
             $perPage,
             $page,
-            ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()]
+            ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()],
+            $oginiPagination,
+            $searchTime,
+            $maxScore
         );
+
+
+
+        return $paginator;
     }
 
     /**
@@ -254,13 +267,13 @@ class OginiEngine extends Engine
         $hits = $this->extractHitsFromResponse($results);
 
         if (empty($hits)) {
-            return $model->newCollection();
+            return new \Illuminate\Database\Eloquent\Collection();
         }
 
         $objectIds = collect($hits)->pluck('id')->values()->all();
         $objectIdPositions = array_flip($objectIds);
 
-        return $model->getScoutModelsByIds(
+        $models = $model->getScoutModelsByIds(
             $builder,
             $objectIds
         )->filter(function ($model) use ($objectIds) {
@@ -268,6 +281,9 @@ class OginiEngine extends Engine
         })->sortBy(function ($model) use ($objectIdPositions) {
             return $objectIdPositions[$model->getScoutKey()];
         })->values();
+
+        // Return the Eloquent Collection directly
+        return $models;
     }
 
     /**
@@ -370,6 +386,11 @@ class OginiEngine extends Engine
      */
     public function getTotalCount($results): int
     {
+        // If results is a LengthAwarePaginator, return its total
+        if ($results instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            return $results->total();
+        }
+
         // Handle API response format: {"hits": {"total": 5, "hits": [...]}}
         if (isset($results['hits']['total'])) {
             return (int) $results['hits']['total'];
@@ -425,6 +446,87 @@ class OginiEngine extends Engine
         }
 
         return [];
+    }
+
+    /**
+     * Extract Ogini-specific pagination metadata from API response.
+     *
+     * @param array $results
+     * @param int $page
+     * @param int $perPage
+     * @param int $total
+     * @return array
+     */
+    protected function extractOginiPagination(array $results, int $page, int $perPage, int $total): array
+    {
+        // Check for enhanced pagination metadata in response
+        if (isset($results['data']['pagination'])) {
+            return $results['data']['pagination'];
+        }
+
+        // Fallback to calculated pagination metadata
+        $totalPages = (int) ceil($total / $perPage);
+
+        return [
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'pageSize' => $perPage,
+            'hasNext' => $page < $totalPages,
+            'hasPrevious' => $page > 1,
+            'totalResults' => $total,
+        ];
+    }
+
+    /**
+     * Extract search execution time from API response.
+     *
+     * @param array $results
+     * @return float|null
+     */
+    protected function extractSearchTime(array $results): ?float
+    {
+        // Check for 'took' field in response
+        if (isset($results['took'])) {
+            return (float) $results['took'];
+        }
+
+        // Check for 'data' wrapper with 'took'
+        if (isset($results['data']['took'])) {
+            return (float) $results['data']['took'];
+        }
+
+        // Check for 'hits' wrapper with 'took'
+        if (isset($results['hits']['took'])) {
+            return (float) $results['hits']['took'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract maximum score from API response.
+     *
+     * @param array $results
+     * @return float|null
+     */
+    protected function extractMaxScore(array $results): ?float
+    {
+        // Check for maxScore in hits
+        if (isset($results['hits']['maxScore'])) {
+            return (float) $results['hits']['maxScore'];
+        }
+
+        // Check for maxScore in data wrapper
+        if (isset($results['data']['maxScore'])) {
+            return (float) $results['data']['maxScore'];
+        }
+
+        // Check for maxScore in data.hits wrapper
+        if (isset($results['data']['hits']['maxScore'])) {
+            return (float) $results['data']['hits']['maxScore'];
+        }
+
+        return null;
     }
 
     /**

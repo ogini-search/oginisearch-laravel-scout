@@ -5,16 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.2] - 2025-07-30
 
-## [1.1.1] - 2024-12-19
+### Added
+- **Enhanced Pagination with OginiPaginator**: New `OginiPaginator` class that extends Laravel's `LengthAwarePaginator` with additional Ogini-specific metadata
+- **Search Performance Metrics**: Access to search execution time and maximum score from search results
+- **Enhanced Metadata Access**: Methods to access pagination metadata, search metrics, and performance data
+- **Laravel Scout Compliance**: Maintains full compatibility with Laravel Scout while providing enhanced functionality
+- **Comprehensive Test Coverage**: Added extensive test suite for pagination functionality and metadata extraction
+
+### Enhanced
+- **Pagination Metadata**: Extract and provide access to `currentPage`, `totalPages`, `pageSize`, `hasNext`, `hasPrevious`, `totalResults`
+- **Performance Monitoring**: Track search execution time and maximum score for performance analysis
+- **API Response Handling**: Support for both current and legacy API response formats
+- **Type Safety**: Proper type casting and validation for pagination parameters
+
+### Technical Improvements
+- **Metadata Extraction**: Methods to extract pagination metadata, search time, and max score from API responses
+- **Fallback Calculations**: Automatic calculation of pagination metadata when not provided by API
+- **Collection Type Safety**: Ensures proper Eloquent Collection return types for Laravel Scout compatibility
+- **Backward Compatibility**: All existing Laravel Scout functionality continues to work unchanged
+
+## [1.1.1] - 2025-07-17
 
 ### Fixed
 - **Pagination Compatibility**: Enhanced paginate function to properly format data for Laravel Scout compatibility
 - **Data Mapping**: Improved map function to handle LengthAwarePaginator instances and prevent double-processing
 - **Scout Integration**: Ensured paginated results return proper model instances instead of raw API data
 
-## [1.1.0] - 2024-12-19
+## [1.1.0] - 2025-07-17
 
 ### Enhanced
 - **Timeout Configuration**: Updated default timeouts for better handling of large datasets
@@ -51,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment Configurable**: All timeout values can be overridden via environment variables
 - **Enterprise Grade**: Supports processing datasets with millions of records
 
-## [1.0.9] - 2025-01-07
+## [1.0.9] - 2025-06-17
 
 ### 🔧 Performance & Functionality Improvements
 
