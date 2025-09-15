@@ -23,6 +23,11 @@ class OginiPaginator extends LengthAwarePaginator
     protected ?float $maxScore;
 
     /**
+     * @var array|null Typo tolerance information from search results
+     */
+    protected ?array $typoTolerance;
+
+    /**
      * Create a new Ogini paginator instance.
      *
      * @param Collection|array $items
@@ -33,6 +38,7 @@ class OginiPaginator extends LengthAwarePaginator
      * @param array $oginiPagination
      * @param float|null $searchTime
      * @param float|null $maxScore
+     * @param array|null $typoTolerance
      */
     public function __construct(
         $items,
@@ -42,13 +48,15 @@ class OginiPaginator extends LengthAwarePaginator
         array $options = [],
         array $oginiPagination = [],
         ?float $searchTime = null,
-        ?float $maxScore = null
+        ?float $maxScore = null,
+        ?array $typoTolerance = null
     ) {
         parent::__construct($items, $total, $perPage, $currentPage, $options);
 
         $this->oginiPagination = $oginiPagination;
         $this->searchTime = $searchTime;
         $this->maxScore = $maxScore;
+        $this->typoTolerance = $typoTolerance;
     }
 
     /**
@@ -152,6 +160,76 @@ class OginiPaginator extends LengthAwarePaginator
     }
 
     /**
+     * Get typo tolerance information from search results.
+     *
+     * @return array|null
+     */
+    public function getTypoTolerance(): ?array
+    {
+        return $this->typoTolerance;
+    }
+
+    /**
+     * Check if typo tolerance was applied to the search.
+     *
+     * @return bool
+     */
+    public function hasTypoTolerance(): bool
+    {
+        return $this->typoTolerance !== null;
+    }
+
+    /**
+     * Get the original query if typo tolerance was applied.
+     *
+     * @return string|null
+     */
+    public function getOriginalQuery(): ?string
+    {
+        return $this->typoTolerance['originalQuery'] ?? null;
+    }
+
+    /**
+     * Get the corrected query if typo tolerance was applied.
+     *
+     * @return string|null
+     */
+    public function getCorrectedQuery(): ?string
+    {
+        return $this->typoTolerance['correctedQuery'] ?? null;
+    }
+
+    /**
+     * Get the confidence score for typo tolerance correction.
+     *
+     * @return float|null
+     */
+    public function getTypoConfidence(): ?float
+    {
+        return $this->typoTolerance['confidence'] ?? null;
+    }
+
+    /**
+     * Get typo tolerance suggestions.
+     *
+     * @return array
+     */
+    public function getTypoSuggestions(): array
+    {
+        return $this->typoTolerance['suggestions'] ?? [];
+    }
+
+    /**
+     * Get typo tolerance corrections.
+     *
+     * @return array
+     */
+    public function getTypoCorrections(): array
+    {
+        return $this->typoTolerance['corrections'] ?? [];
+    }
+
+    /**
      * Get search performance metrics.
      *
      * @return array
@@ -167,6 +245,7 @@ class OginiPaginator extends LengthAwarePaginator
             'page_size' => $this->getPageSize(),
             'has_next' => $this->hasNextPage(),
             'has_previous' => $this->hasPreviousPage(),
+            'typo_tolerance' => $this->typoTolerance,
         ];
     }
 
@@ -180,6 +259,7 @@ class OginiPaginator extends LengthAwarePaginator
         return array_merge(parent::toArray(), [
             'ogini_metadata' => $this->oginiPagination,
             'search_metrics' => $this->getSearchMetrics(),
+            'typo_tolerance' => $this->typoTolerance,
         ]);
     }
 }

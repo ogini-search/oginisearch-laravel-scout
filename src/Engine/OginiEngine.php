@@ -4,6 +4,7 @@ namespace OginiScoutDriver\Engine;
 
 use Laravel\Scout\Builder;
 use Laravel\Scout\Engines\Engine;
+use Laravel\Scout\Contracts\PaginatesEloquentModels;
 use OginiScoutDriver\Client\OginiClient;
 use OginiScoutDriver\Exceptions\OginiException;
 use OginiScoutDriver\Search\Facets\FacetDefinition;
@@ -22,8 +23,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as BaseCollection;
 use Illuminate\Support\LazyCollection;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Support\Facades\Log;
 
-class OginiEngine extends Engine
+class OginiEngine extends Engine implements PaginatesEloquentModels
 {
     protected OginiClient $client;
     protected array $config;
@@ -231,6 +233,7 @@ class OginiEngine extends Engine
         $oginiPagination = $this->extractOginiPagination($results, $page, $perPage, $total);
         $searchTime = $this->extractSearchTime($results);
         $maxScore = $this->extractMaxScore($results);
+        $typoTolerance = $this->extractTypoTolerance($results);
 
         // Return enhanced OginiPaginator with metadata
         $paginator = new OginiPaginator(
@@ -241,12 +244,27 @@ class OginiEngine extends Engine
             ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()],
             $oginiPagination,
             $searchTime,
-            $maxScore
+            $maxScore,
+            $typoTolerance
         );
 
-
-
         return $paginator;
+    }
+
+    /**
+     * Perform a simple pagination search on the engine.
+     *
+     * @param Builder $builder
+     * @param int|string $perPage
+     * @param int|string $page
+     * @return \Illuminate\Contracts\Pagination\Paginator
+     * @throws OginiException
+     */
+    public function simplePaginate(Builder $builder, $perPage, $page)
+    {
+        // For now, just return the regular paginate result
+        // This can be optimized later if needed
+        return $this->paginate($builder, $perPage, $page);
     }
 
     /**
@@ -282,8 +300,8 @@ class OginiEngine extends Engine
             return $objectIdPositions[$model->getScoutKey()];
         })->values();
 
-        // Return the Eloquent Collection directly
-        return $models;
+        // Convert to Eloquent Collection
+        return new \Illuminate\Database\Eloquent\Collection($models->toArray());
     }
 
     /**
@@ -391,13 +409,17 @@ class OginiEngine extends Engine
             return $results->total();
         }
 
-        // Handle API response format: {"hits": {"total": 5, "hits": [...]}}
+        // Handle current API response format: {"data": {"total": 5, "hits": [...]}}
+        if (isset($results['data']['total'])) {
+            return (int) $results['data']['total'];
+        }
+
+        // Handle legacy format: {"hits": {"total": 5, "hits": [...]}}
         if (isset($results['hits']['total'])) {
             return (int) $results['hits']['total'];
         }
 
-        // Fallback to legacy format
-        return $results['data']['total'] ?? 0;
+        return 0;
     }
 
     /**
@@ -435,14 +457,14 @@ class OginiEngine extends Engine
      */
     protected function extractHitsFromResponse(array $results): array
     {
-        // Handle current API response format: {"hits": {"total": 5, "hits": [...]}}
-        if (isset($results['hits']['hits']) && is_array($results['hits']['hits'])) {
-            return $results['hits']['hits'];
-        }
-
-        // Handle legacy format: {"data": {"total": 5, "hits": [...]}}
+        // Handle current API response format: {"data": {"hits": [...]}}
         if (isset($results['data']['hits']) && is_array($results['data']['hits'])) {
             return $results['data']['hits'];
+        }
+
+        // Handle legacy format: {"hits": {"total": 5, "hits": [...]}}
+        if (isset($results['hits']['hits']) && is_array($results['hits']['hits'])) {
+            return $results['hits']['hits'];
         }
 
         return [];
@@ -511,19 +533,40 @@ class OginiEngine extends Engine
      */
     protected function extractMaxScore(array $results): ?float
     {
-        // Check for maxScore in hits
-        if (isset($results['hits']['maxScore'])) {
-            return (float) $results['hits']['maxScore'];
-        }
-
-        // Check for maxScore in data wrapper
+        // Check for maxScore in data wrapper (current format)
         if (isset($results['data']['maxScore'])) {
             return (float) $results['data']['maxScore'];
+        }
+
+        // Check for maxScore in hits (legacy format)
+        if (isset($results['hits']['maxScore'])) {
+            return (float) $results['hits']['maxScore'];
         }
 
         // Check for maxScore in data.hits wrapper
         if (isset($results['data']['hits']['maxScore'])) {
             return (float) $results['data']['hits']['maxScore'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract typo tolerance information from API response.
+     *
+     * @param array $results
+     * @return array|null
+     */
+    protected function extractTypoTolerance(array $results): ?array
+    {
+        // Check for typoTolerance in response
+        if (isset($results['typoTolerance'])) {
+            return $results['typoTolerance'];
+        }
+
+        // Check for typoTolerance in data wrapper
+        if (isset($results['data']['typoTolerance'])) {
+            return $results['data']['typoTolerance'];
         }
 
         return null;
@@ -558,11 +601,13 @@ class OginiEngine extends Engine
             );
         }
 
-        return $this->client->search(
+        $results = $this->client->search(
             $indexName,
             $builder->query ?: '',
             array_merge($searchQuery, $options)
         );
+
+        return $results;
     }
 
     /**

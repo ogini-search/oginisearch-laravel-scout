@@ -5,25 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2025-01-30
+
+### Added
+- **Typo Tolerance Support**: Full support for typo tolerance information from Ogini Search API responses
+- **Typo Correction Methods**: Access to original query, corrected query, confidence scores, suggestions, and corrections
+- **Enhanced Typo Tolerance Integration**: Seamless integration with Ogini Search API's typo tolerance features
+- **Comprehensive Typo Tolerance Test Coverage**: Added extensive test suite for typo tolerance functionality
+
+### Enhanced
+- **API Response Handling**: Support for both current and legacy API response formats with typo tolerance data
+- **Search Query Enhancement**: Access to original and corrected queries with confidence scores
+- **Typo Tolerance Parsing**: Robust extraction of typo tolerance data from both current and legacy API response formats
+
+### Technical Improvements
+- **Enhanced Paginator Methods**: Added `getTypoTolerance()`, `hasTypoTolerance()`, `getOriginalQuery()`, `getCorrectedQuery()`, `getTypoConfidence()`, `getTypoSuggestions()`, `getTypoCorrections()`
+- **Typo Tolerance Extraction**: New `extractTypoTolerance()` method in OginiEngine for parsing typo tolerance data
+- **Backward Compatibility**: All existing Laravel Scout functionality continues to work unchanged
+
 ## [1.1.2] - 2025-07-30
 
 ### Added
 - **Enhanced Pagination with OginiPaginator**: New `OginiPaginator` class that extends Laravel's `LengthAwarePaginator` with additional Ogini-specific metadata
 - **Search Performance Metrics**: Access to search execution time and maximum score from search results
 - **Enhanced Metadata Access**: Methods to access pagination metadata, search metrics, and performance data
+- **Typo Tolerance Support**: Full support for typo tolerance information from Ogini Search API responses
+- **Typo Correction Methods**: Access to original query, corrected query, confidence scores, suggestions, and corrections
 - **Laravel Scout Compliance**: Maintains full compatibility with Laravel Scout while providing enhanced functionality
-- **Comprehensive Test Coverage**: Added extensive test suite for pagination functionality and metadata extraction
+- **Comprehensive Test Coverage**: Added extensive test suite for pagination functionality, metadata extraction, and typo tolerance
 
 ### Enhanced
 - **Pagination Metadata**: Extract and provide access to `currentPage`, `totalPages`, `pageSize`, `hasNext`, `hasPrevious`, `totalResults`
 - **Performance Monitoring**: Track search execution time and maximum score for performance analysis
-- **API Response Handling**: Support for both current and legacy API response formats
+- **API Response Handling**: Support for both current and legacy API response formats with typo tolerance data
 - **Type Safety**: Proper type casting and validation for pagination parameters
+- **Typo Tolerance Integration**: Seamless integration with Ogini Search API's typo tolerance features
+- **Search Query Enhancement**: Access to original and corrected queries with confidence scores
 
 ### Technical Improvements
-- **Metadata Extraction**: Methods to extract pagination metadata, search time, and max score from API responses
+- **Metadata Extraction**: Methods to extract pagination metadata, search time, max score, and typo tolerance from API responses
 - **Fallback Calculations**: Automatic calculation of pagination metadata when not provided by API
 - **Collection Type Safety**: Ensures proper Eloquent Collection return types for Laravel Scout compatibility
+- **Typo Tolerance Parsing**: Robust extraction of typo tolerance data from both current and legacy API response formats
+- **Enhanced Paginator Methods**: Added `getTypoTolerance()`, `hasTypoTolerance()`, `getOriginalQuery()`, `getCorrectedQuery()`, `getTypoConfidence()`, `getTypoSuggestions()`, `getTypoCorrections()`
 - **Backward Compatibility**: All existing Laravel Scout functionality continues to work unchanged
 
 ## [1.1.1] - 2025-07-17
