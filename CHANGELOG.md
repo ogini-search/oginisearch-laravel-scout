@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2025-11-18
+
+### Added
+- **Raw Hits Access**: New `getRawHits()` method in `OginiPaginator` to access raw indexed data from search results
+- **Indexed Data Access**: Ability to retrieve indexed fields (location_text, category_name, etc.) directly from paginated results
+
+### Enhanced
+- **OginiPaginator Constructor**: Now accepts and stores raw search hits for direct access to indexed data
+- **Search Result Data**: Enhanced paginator to preserve raw API response data alongside mapped model instances
+
+### Technical Improvements
+- **Raw Hits Storage**: Added `$rawHits` property to `OginiPaginator` for storing raw search engine hits
+- **Data Preservation**: `OginiEngine` now passes raw hits to paginator, allowing access to both model instances and indexed data
+- **Backward Compatibility**: All existing functionality continues to work unchanged
+
 ## [1.1.3] - 2025-01-30
 
 ### Added

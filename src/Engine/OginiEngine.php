@@ -235,7 +235,7 @@ class OginiEngine extends Engine implements PaginatesEloquentModels
         $maxScore = $this->extractMaxScore($results);
         $typoTolerance = $this->extractTypoTolerance($results);
 
-        // Return enhanced OginiPaginator with metadata
+        // Return enhanced OginiPaginator with metadata and raw hits
         $paginator = new OginiPaginator(
             $models,
             $total,
@@ -245,7 +245,8 @@ class OginiEngine extends Engine implements PaginatesEloquentModels
             $oginiPagination,
             $searchTime,
             $maxScore,
-            $typoTolerance
+            $typoTolerance,
+            $hits // Pass raw hits so indexed data can be accessed
         );
 
         return $paginator;

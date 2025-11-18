@@ -28,6 +28,11 @@ class OginiPaginator extends LengthAwarePaginator
     protected ?array $typoTolerance;
 
     /**
+     * @var array Raw search hits from the search engine (contains indexed data)
+     */
+    protected array $rawHits = [];
+
+    /**
      * Create a new Ogini paginator instance.
      *
      * @param Collection|array $items
@@ -39,6 +44,7 @@ class OginiPaginator extends LengthAwarePaginator
      * @param float|null $searchTime
      * @param float|null $maxScore
      * @param array|null $typoTolerance
+     * @param array $rawHits
      */
     public function __construct(
         $items,
@@ -49,7 +55,8 @@ class OginiPaginator extends LengthAwarePaginator
         array $oginiPagination = [],
         ?float $searchTime = null,
         ?float $maxScore = null,
-        ?array $typoTolerance = null
+        ?array $typoTolerance = null,
+        array $rawHits = []
     ) {
         parent::__construct($items, $total, $perPage, $currentPage, $options);
 
@@ -57,6 +64,7 @@ class OginiPaginator extends LengthAwarePaginator
         $this->searchTime = $searchTime;
         $this->maxScore = $maxScore;
         $this->typoTolerance = $typoTolerance;
+        $this->rawHits = $rawHits;
     }
 
     /**
@@ -227,6 +235,17 @@ class OginiPaginator extends LengthAwarePaginator
     public function getTypoCorrections(): array
     {
         return $this->typoTolerance['corrections'] ?? [];
+    }
+
+    /**
+     * Get raw search hits from the search engine.
+     * This contains the indexed data (location_text, category_name, etc.)
+     *
+     * @return array
+     */
+    public function getRawHits(): array
+    {
+        return $this->rawHits;
     }
 
     /**
