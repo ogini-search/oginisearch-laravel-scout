@@ -254,11 +254,14 @@ class BulkImportCommand extends Command
 
             $batchModels = $models->take($recordsToProcess - $processed);
 
+            // Use the bulk queue connection from scout config
+            $bulkQueueConnection = config('scout.bulk.queue_connection', 'database');
+
             BulkScoutImportJob::dispatch(
                 $batchModels->pluck('id')->toArray(),
                 $modelClass,
                 (int) $this->option('batch-size')
-            );
+            )->onConnection($bulkQueueConnection);
             $jobsDispatched++;
             $processed += $batchModels->count();
 

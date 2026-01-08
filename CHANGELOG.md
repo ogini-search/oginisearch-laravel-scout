@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2025-11-18
+
+### Enhanced
+- **Configurable Queue Connection**: Bulk import jobs now respect the `scout.bulk.queue_connection` configuration option
+- **Queue Flexibility**: Allows bulk import operations to use dedicated queue connections for better resource management
+
+### Technical Improvements
+- **Bulk Import Queue Configuration**: `BulkImportCommand` now uses `config('scout.bulk.queue_connection', 'database')` to determine queue connection
+- **Default Fallback**: Falls back to 'database' connection if configuration is not set, maintaining backward compatibility
+- **Better Resource Management**: Enables separation of bulk import jobs from regular application jobs
+
 ## [1.1.4] - 2025-11-18
 
 ### Added
