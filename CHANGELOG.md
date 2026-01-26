@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2025-11-18
+
+### Added
+- **Laravel 12 Support**: Full compatibility with Laravel 12 framework
+- **Extended Framework Support**: Package now supports Laravel 10, 11, and 12
+
+### Technical Improvements
+- **Updated Dependencies**: Added Laravel 12 to framework version constraints (`^10.0|^11.0|^12.0`)
+- **Testbench Compatibility**: Updated Orchestra Testbench to support Laravel 12 testing (`^8.0|^9.0|^10.0`)
+- **Backward Compatibility**: All existing Laravel 10 and 11 functionality remains unchanged
+
 ## [1.1.5] - 2025-11-18
 
 ### Enhanced
