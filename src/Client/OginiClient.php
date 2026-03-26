@@ -416,7 +416,11 @@ class OginiClient
 
             $options = array_merge($defaultOptions, $options);
 
-            $response = $this->httpClient->request($method, $endpoint, $options);
+            // Build full URI so base path is preserved (Guzzle replaces base path when endpoint starts with /)
+            $path = str_starts_with($endpoint, '/') ? $endpoint : '/' . $endpoint;
+            $fullUri = rtrim($this->baseUrl, '/') . $path;
+
+            $response = $this->httpClient->request($method, $fullUri, $options);
 
             return $this->handleResponse($response);
         } catch (ConnectException $e) {

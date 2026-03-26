@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2026-02-20
+
+### Fixed
+- **Base URL Path Preservation**: Fixed HTTP request URI construction in both synchronous and asynchronous clients to preserve base URL paths for all API requests
+- **Async Client Consistency**: Updated `AsyncOginiClient` request handling to match `OginiClient` full-URI behavior and avoid endpoint path replacement issues
+
+### Technical Improvements
+- **Reliable Endpoint Resolution**: Requests now construct full URIs from `baseUrl` + endpoint before dispatching, ensuring consistent routing when base URLs include path segments
+- **Backward Compatibility**: No public API changes; fix is internal and fully compatible with existing integrations
+
 ## [1.1.6] - 2025-11-18
 
 ### Added

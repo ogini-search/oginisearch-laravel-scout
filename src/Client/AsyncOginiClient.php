@@ -179,7 +179,11 @@ class AsyncOginiClient extends OginiClient
             $options['json'] = $data;
         }
 
-        $promise = $this->httpClient->requestAsync($method, $endpoint, $options);
+        // Build full URI so base path is preserved (same as OginiClient::request)
+        $path = str_starts_with($endpoint, '/') ? $endpoint : '/' . $endpoint;
+        $fullUri = rtrim($this->baseUrl, '/') . $path;
+
+        $promise = $this->httpClient->requestAsync($method, $fullUri, $options);
 
         if ($successCallback || $errorCallback) {
             $promise = $promise->then(
